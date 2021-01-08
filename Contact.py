@@ -19,7 +19,7 @@ class ContactList:
                             v.fn
                         except NameError:
                             v.fn = v.n
-                        append_to_vcf(vcf + 'pokus.vcf', v)
+                        # append_to_vcf(vcf + 'pokus.vcf', v)
 
             else:  # this way counting number of records in a file
                 with open(vcf, mode='r', encoding='utf-8') as vcf_file:
