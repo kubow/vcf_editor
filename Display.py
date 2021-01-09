@@ -16,15 +16,20 @@ from Contact import ContactList
 class MainWindow:
     def __init__(self, master):
         self.master = master
-        self.active_sel = ''
+        self.active_sel = {
+            'contact': '',
+            'name': '',
+            'number': '',
+            'various': ''
+        }
         self.curr_loc = directory
         self.mode = tk.IntVar(value=0)
         self.contacts_lib = ''
         
         # ===================== (Main Menu + controls)
         self.current_location = tk.Label(self.master, text='Location : {0}'.format(directory))
-        self.radio1 = tk.Radiobutton(self.master, text='Single file', value=False, variable=self.mode.get(), command=self.refresh)
-        self.radio2 = tk.Radiobutton(self.master, text='Folder', value=True, variable=self.mode.get(), command=self.refresh)
+        self.radio1 = tk.Radiobutton(self.master, text='Single file', value=False, variable=self.mode, command=self.set_file)
+        self.radio2 = tk.Radiobutton(self.master, text='Folder', value=True, variable=self.mode, command=self.set_dir)
         
         self.current_location.grid(row=0, column=0, sticky='w')
         self.radio1.grid(row=0, column=2)
@@ -35,12 +40,13 @@ class MainWindow:
         self.btn_prev = tk.Button(self.master, text='<')
         self.btn_save = tk.Button(self.master, text='save')
         self.btn_next = tk.Button(self.master, text='>')
-        self.btn_exit = tk.Button(self.master, text='save')
+        self.btn_exit = tk.Button(self.master, text='quit', command=exit())
         
         self.btn_open.grid(row=1, column=0)
         self.btn_prev.grid(row=1, column=1)
         self.btn_save.grid(row=1, column=2)
         self.btn_next.grid(row=1, column=3)
+        self.btn_exit.grid(row=1, column=4)
         
         # ===================== (Contacts list)
         self.contacts_list = tk.Listbox(self.master, height=7)
@@ -56,15 +62,29 @@ class MainWindow:
         # ===================== (Fields list)
         
         self.f1_lab = tk.Label(self.master, text='Jmeno')
-        self.f1_inp = tk.Label(self.master, text='Jmeno')
-        
-        se
-        
+        self.f1_inp = tk.Entry(self.master, textvariable=self.active_sel['name'])
+        self.f2_lab = tk.Label(self.master, text='Cislo')
+        self.f2_inp = tk.Entry(self.master, textvariable=self.active_sel['number'])
+        self.f3_lab = tk.Label(self.master, text='Dalsi')
+        self.f3_inp = tk.Entry(self.master, textvariable=self.active_sel['various'])
+
+        self.f1_lab.grid(row=2, column=2)
+        self.f1_inp.grid(row=2, column=3)
+        self.f2_lab.grid(row=3, column=2)
+        self.f2_inp.grid(row=3, column=3)
+        self.f3_lab.grid(row=4, column=2)
+        self.f3_inp.grid(row=4, column=3)
+
         # TODO: 1. Switcher between folder and file mode still not working
-        # TODO: 2. Field list 
-        # TODO: 3. Exporting / Merging
+        # TODO: 2. Exporting / Merging
         
         self.refresh()  # list widgets
+
+    def set_dir(self):
+        print('setting folder', self.mode.get())
+
+    def set_file(self):
+        print('setting file', self.mode.get())
 
     def browse_dir(self):
         if self.mode:
@@ -93,16 +113,8 @@ class MainWindow:
         if w == self.contacts_list:  # click in contact list
             if w.curselection():
                 index = int(w.curselection()[0])
-                self.active_sel = w.get(index)
-                
-        elif w == self.radio1:
-            print('file reading mode')
-            self.mode = False
-        elif w == self.radio2:
-            print('folder reading mode')
-            self.mode = True        
+                self.active_sel['contact'] = w.get(index)      
         self.refresh()          
-
 
     
 def contacts_editor():
@@ -114,10 +126,12 @@ def contacts_editor():
 
     global directory
     # directory = os.getcwd()
-    directory = 'C:\\Users\\jirib\\Downloads\\SD_samci\\work'
+    # directory = 'C:\\Users\\jirib\\Downloads\\SD_samci\\work'
+    directory = '/home/kubow/Documents/Project/Contacts/'
     print('using directory', directory)
 
     MainWindow(root)  # .pack(side="top", fill="both", expand=True)
+    print('allright')
     root.mainloop()
 
     
