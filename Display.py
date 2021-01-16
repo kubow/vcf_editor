@@ -3,11 +3,13 @@
 # Must do for compatibility win <> lnx
 try:
     import Tkinter as tk
+    import Tkinter.filedialog as dialog
     print('using big tkinter (linux way)')
 except ImportError:
     import tkinter as tk
+    import tkinter.filedialog as dialog
     print('using small tkinter (windows way)')
-    
+
 # Contact list constructor
 from Contact import ContactList
 
@@ -18,103 +20,150 @@ class MainWindow:
         self.master = master
         self.active_sel = {
             'contact': '',
+            'index': 0,
             'name': '',
             'number': '',
             'various': ''
         }
-        self.curr_loc = directory
-        self.mode = tk.IntVar(value=0)
+        self.await_load = True
+        self.btn = {}
+        self.curr_loc = ''
+        self.form = {}
+        self.mode = tk.IntVar(value=0)  # folder value active
         self.contacts_lib = ''
         
         # ===================== (Main Menu + controls)
-        self.current_location = tk.Label(self.master, text='Location : {0}'.format(directory))
-        self.radio1 = tk.Radiobutton(self.master, text='Single file', value=False, variable=self.mode, command=self.set_file)
-        self.radio2 = tk.Radiobutton(self.master, text='Folder', value=True, variable=self.mode, command=self.set_dir)
+        self.current_location = tk.Label(self.master, text='Location : {0}'.format(self.curr_loc))
+        self.radio1 = tk.Radiobutton(self.master, text='Adresar', value=False, variable=self.mode, command=self.set_dir)
+        self.radio2 = tk.Radiobutton(self.master, text='Soubor', value=True, variable=self.mode, command=self.set_file)
         
         self.current_location.grid(row=0, column=0, sticky='w')
         self.radio1.grid(row=0, column=2)
         self.radio2.grid(row=0, column=3)
         
         # ===================== (Button Menu)
-        self.btn_open = tk.Button(self.master, text='open', command=self.on_select)
-        self.btn_prev = tk.Button(self.master, text='<')
-        self.btn_save = tk.Button(self.master, text='save')
-        self.btn_next = tk.Button(self.master, text='>')
-        self.btn_exit = tk.Button(self.master, text='quit', command=exit())
-        
-        self.btn_open.grid(row=1, column=0)
-        self.btn_prev.grid(row=1, column=1)
-        self.btn_save.grid(row=1, column=2)
-        self.btn_next.grid(row=1, column=3)
-        self.btn_exit.grid(row=1, column=4)
-        
+        self.btn['open'] = tk.Button(self.master, text='open', command=self.browse_dir)
+        self.btn['prev'] = tk.Button(self.master, text='<', command=self.prev)
+        self.btn['save'] = tk.Button(self.master, text='save')  # editing not yet implemented
+        self.btn['next'] = tk.Button(self.master, text='>', command=self.next)
+        self.btn['exit'] = tk.Button(self.master, text='quit', command=self.quit)
+        self.btn['open'].grid(row=1, column=0)
+        self.btn['prev'].grid(row=1, column=1)
+        self.btn['save'].grid(row=1, column=2)
+        self.btn['next'].grid(row=1, column=3)
+        self.btn['exit'].grid(row=1, column=4)
+
         # ===================== (Contacts list)
-        self.contacts_list = tk.Listbox(self.master, height=7)
+        self.contacts_list = tk.Listbox(self.master, height=7)  # selectmode='SINGLE'
         self.contacts_list.bind('<<ListboxSelect>>', self.on_select)
         self.contacts_scroll = tk.Scrollbar(self.master, orient='vertical')
         
         self.contacts_list['yscrollcommand'] = self.contacts_scroll.set
         self.contacts_scroll['command'] = self.contacts_list.yview
         
-        self.contacts_list.grid(row=2, column=0, rowspan=8, columnspan=1, sticky='nse', pady=(3, 3), padx=(3, 3))
-        self.contacts_scroll.grid(row=2, column=0, rowspan=8, columnspan=1, sticky='nse', pady=(5, 5), padx=(5, 5))
+        self.contacts_list.grid(row=2, column=0, rowspan=4, columnspan=1, sticky='nse', pady=(3, 3), padx=(3, 3))
+        self.contacts_scroll.grid(row=2, column=0, rowspan=4, columnspan=1, sticky='nse', pady=(5, 5), padx=(5, 5))
         
         # ===================== (Fields list)
-        
-        self.f1_lab = tk.Label(self.master, text='Jmeno')
-        self.f1_inp = tk.Entry(self.master, textvariable=self.active_sel['name'])
-        self.f2_lab = tk.Label(self.master, text='Cislo')
-        self.f2_inp = tk.Entry(self.master, textvariable=self.active_sel['number'])
-        self.f3_lab = tk.Label(self.master, text='Dalsi')
-        self.f3_inp = tk.Entry(self.master, textvariable=self.active_sel['various'])
+        self.form['f1_lab'] = tk.Label(self.master, text='Jmeno')
+        self.form['f1_inp'] = tk.Entry(self.master, textvariable=self.active_sel['name'])
+        self.form['f2_lab'] = tk.Label(self.master, text='Cislo')
+        self.form['f2_inp'] = tk.Entry(self.master, textvariable=self.active_sel['number'])
+        self.form['f3_lab'] = tk.Label(self.master, text='Dalsi')
+        self.form['f3_inp'] = tk.Entry(self.master, textvariable=self.active_sel['various'])
+        self.form['f3_inp'].insert(0, 'zatim nic...')
 
-        self.f1_lab.grid(row=2, column=2)
-        self.f1_inp.grid(row=2, column=3)
-        self.f2_lab.grid(row=3, column=2)
-        self.f2_inp.grid(row=3, column=3)
-        self.f3_lab.grid(row=4, column=2)
-        self.f3_inp.grid(row=4, column=3)
+        self.form['f1_lab'].grid(row=2, column=2)
+        self.form['f1_inp'].grid(row=2, column=3)
+        self.form['f2_lab'].grid(row=3, column=2)
+        self.form['f2_inp'].grid(row=3, column=3)
+        self.form['f3_lab'].grid(row=4, column=2)
+        self.form['f3_inp'].grid(row=4, column=3)
 
         # TODO: 1. Switcher between folder and file mode still not working
         # TODO: 2. Exporting / Merging
-        
-        self.refresh()  # list widgets
+
+        self.set_dir()  # first app init is hardcoded to folder
 
     def set_dir(self):
-        print('setting folder', self.mode.get())
+        if self.curr_loc:
+            print('browsing folder', self.curr_loc)
+        self.browse_dir()
+        self.refresh()
 
     def set_file(self):
-        print('setting file', self.mode.get())
+        print('setting file', self.curr_loc)
+        self.browse_dir()
+        self.refresh()
 
     def browse_dir(self):
-        if self.mode:
-            vcf = tk.filedialog.askdirectory()
-            print('setting directory to', vcf)
-            #self.contacts_lib = ContactList(vcf, is_dir=True)
+        if self.mode.get():
+            self.curr_loc = dialog.askopenfilename()
+            really = False
         else:
-            vcf = tk.filedialog.askopenfilename()
-            print('opening a file', vcf)
-            # self.contacts_lib = ContactList(vcf)
+            self.curr_loc = dialog.askdirectory()
+            really = True
+        self.contacts_lib = ContactList(self.curr_loc, is_dir=really)
+        self.await_load = True
 
     def refresh(self):
-        self.contacts_list.delete(0, 'end') # refreshing whole layout
-        print('selected option', self.mode, 'really?')
-        if self.mode:
-            self.contacts_lib = ContactList(self.curr_loc, is_dir=True)
-            for c_file in self.contacts_lib.dic.keys():
-                self.contacts_list.insert('end', c_file)
-        else:
-            self.contacts_lib = ContactList(self.curr_loc)
-            # cycle library
-        self.current_location['text'] = 'Location : {0}'.format(self.curr_loc)            
+        if self.await_load:
+            self.contacts_list.delete(0, 'end')
+            for record in self.contacts_lib.dic.keys():
+                self.contacts_list.insert('end', str(record) + '. ' + self.contacts_lib.dic[record]['FN'])
+            self.await_load = False
+        self.current_location['text'] = 'Location : {0}'.format(self.curr_loc)
                  
     def on_select(self, evt):
         w = evt.widget
         if w == self.contacts_list:  # click in contact list
             if w.curselection():
+                self.form['f1_inp'].delete(0, 'end')
+                self.form['f2_inp'].delete(0, 'end')
                 index = int(w.curselection()[0])
-                self.active_sel['contact'] = w.get(index)      
-        self.refresh()          
+                value = int(w.get(index).split('.')[0])
+                self.active_sel['index'] = value
+                self.active_sel['contact'] = self.contacts_lib.dic[value]['FN']
+                self.active_sel['number'] = self.contacts_lib.dic[value]['TEL']
+
+                self.form['f1_inp'].insert(20, self.contacts_lib.dic[value]['FN'])
+                self.form['f2_inp'].insert(20, self.contacts_lib.dic[value]['TEL'])
+        self.refresh()
+
+    def which_mode(self):
+        return False if self.mode.get() else True
+
+    def prev(self):
+        if self.contacts_lib:
+            if self.active_sel['index'] > 1:
+                self.active_sel['index'] -= 1
+            self.control()
+
+    def next(self):
+        if self.contacts_lib:
+            if self.active_sel['index'] < len(self.contacts_lib.dic):
+                self.active_sel['index'] += 1
+            self.control()
+
+    def control(self):
+        if (self.contacts_list.curselection()[0]+1) < len(self.contacts_lib.dic):
+            self.active_sel['contact'] = self.contacts_lib.dic[int(self.active_sel['index'])]['FN']
+            self.active_sel['number'] = self.contacts_lib.dic[int(self.active_sel['index'])]['TEL']
+            self.form['f1_inp'].delete(0, 'end')
+            self.form['f2_inp'].delete(0, 'end')
+            self.form['f1_inp'].insert(20, self.active_sel['contact'])
+            self.form['f2_inp'].insert(20, self.active_sel['number'])
+            print('Setting', str(self.contacts_list.curselection()[0]+1), '>', str(self.active_sel['index']), 'record')
+            self.contacts_list.selection_clear(0, "end")
+            self.contacts_list.selection_set(int(self.active_sel['index'])-1)
+            self.contacts_list.see(int(self.active_sel['index'])-1)
+            self.contacts_list.activate(int(self.active_sel['index'])-1)
+            self.contacts_list.selection_anchor(int(self.active_sel['index'])-1)
+            # self.contacts_list.select_set(int(self.active_sel['index'])-1)
+            # self.contacts_list.event_generate("<<ListboxSelect>>")
+
+    def quit(self):
+        self.master.destroy()
 
     
 def contacts_editor():
@@ -123,17 +172,9 @@ def contacts_editor():
     root.title('Editor VCF kontaktu')
     root.resizable(10, 10)
     # root.geometry('1200x900')
-
-    global directory
-    # directory = os.getcwd()
-    # directory = 'C:\\Users\\jirib\\Downloads\\SD_samci\\work'
-    directory = '/home/kubow/Documents/Project/Contacts/'
-    print('using directory', directory)
-
     MainWindow(root)  # .pack(side="top", fill="both", expand=True)
-    print('allright')
     root.mainloop()
 
-    
+
 if __name__ == '__main__':
     contacts_editor()

@@ -9,30 +9,33 @@ class ContactList:
         self.active_key = ''
         self.active_value = ''
         try:
-            if is_dir:  # this way counting number of files
-                for file in os.listdir(vcf):
-                    with open(vcf+'\\'+file, mode='r', encoding='utf-8') as vcf_file:
-                        self.counter += 1
-                        v = vobject.readOne(vcf_file)
-                        self.append(v.n.value, str(v.tel.value).replace(' ', ''))
-                        try:
-                            v.fn
-                        except NameError:
-                            v.fn = v.n
-                        # append_to_vcf(vcf + 'pokus.vcf', v)
-
-            else:  # this way counting number of records in a file
-                with open(vcf, mode='r', encoding='utf-8') as vcf_file:
-                    for v in vobject.readComponents(vcf_file):
-                        self.counter += 1
-                        self.append(v.fn.value, str(v.tel.value).replace(' ', ''))
-                        # export_to_vcf(home_folder + 'work\\', vcard)
+            if len(vcf) > 0:
+                if is_dir:  # this way counting number of files
+                    for file in os.listdir(vcf):
+                        with open(vcf+'\\'+file, mode='r', encoding='utf-8') as vcf_file:
+                            self.counter += 1
+                            self.append(vobject.readOne(vcf_file))
+                else:  # this way counting number of records in a file
+                    with open(vcf, mode='r', encoding='utf-8') as vcf_file:
+                        for v in vobject.readComponents(vcf_file):
+                            self.counter += 1
+                            self.append(v)
         except Exception as e:
             print('error:', e)
 
-    def append(self, key, value):
-        print(str(self.counter)+'. '+str(key))
-        self.dic[str(key)] = value
+    def append(self, vobj):
+        # print(str(self.counter)+'. '+str(vcf))
+        # vcf.n.value, str(vcf.tel.value).replace(' ', '')
+        passed = False
+        self.dic[self.counter] = {}
+        for field in vobj.getSortedChildren():
+            if field.name.lower() == 'fn':
+                passed = True
+            self.dic[self.counter][field.name] = field.value
+        if not passed:
+            self.dic[self.counter]['FN'] = self.dic[self.counter]['N']
+        # append_to_vcf(vcf + 'pokus.vcf', v)
+        # export_to_vcf(home_folder + 'work\\', vcard)
 
     def find_duplicates(self):
         for key, value in self.dic.items():
@@ -71,6 +74,7 @@ def append_to_vcf(location, vc):
     vcf_name = vc.fn.value + '.vcf'  # .encode().decode('unicode-escape')
     with open(location + vcf_name, mode='a', encoding='utf-8') as f:
         f.write(vc.serialize())
+
 
 if __name__ == '__main__':
     print("O'really?")
