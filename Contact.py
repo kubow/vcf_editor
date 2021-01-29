@@ -24,8 +24,8 @@ class ContactList:
             print('error:', e)
 
     def append(self, vobj):
-        # print(str(self.counter)+'. '+str(vcf))
-        # vcf.n.value, str(vcf.tel.value).replace(' ', '')
+        # print(str(self.counter)+'. '+str(vobj))
+        # vobj.n.value, str(vobj.tel.value).replace(' ', '')
         passed = False
         self.dic[self.counter] = {}
         for field in vobj.getSortedChildren():
@@ -38,6 +38,7 @@ class ContactList:
         # export_to_vcf(home_folder + 'work\\', vcard)
 
     def find_duplicates(self):
+        # TODO: not valid, need to repair
         for key, value in self.dic.items():
             self.active_key = key
             self.active_value = value
@@ -45,6 +46,7 @@ class ContactList:
                 print('duplicate found for', key, '/', value)
 
     def search(self, s):
+        # TODO: not valid, need to repair
         s = s.lower()
         occurs = 0
         for name, phone in self.dic.items():
@@ -52,6 +54,17 @@ class ContactList:
                 if s in name or s in phone:
                     occurs += 1
         return occurs
+
+    def export(self, path):
+        for record in self.dic.keys():
+            with open(path + self.dic[record]['FN'], mode='w', encoding='utf-8') as f:
+                f.write(self.dic[record].serialize())
+
+    def merge(self, path):
+        with open(path + self.dic[record]['FN'], mode='a', encoding='utf-8') as f:
+            f.write(self.dic.serialize())
+            #for record in self.dic.keys():
+            #    f.write(self.dic[record].serialize())
 
 
 def export_to_vcf(location, vc):
