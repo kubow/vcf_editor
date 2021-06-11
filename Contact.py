@@ -1,6 +1,11 @@
+from difflib import SequenceMatcher
 import os
-import vobject
-
+try:
+    import vobject
+    can_vcf = True
+except ImportError:
+    print('... cannot work with vcf contacts')
+    can_vcf = False
 
 class ContactList:
     def __init__(self, vcf, is_dir=False):
@@ -9,7 +14,7 @@ class ContactList:
         self.active_key = ''
         self.active_value = ''
         try:
-            if len(vcf) > 0:
+            if len(vcf) > 0 and can_vcf:
                 if is_dir:  # this way counting number of files
                     for file in os.listdir(vcf):
                         with open(vcf+'\\'+file, mode='r', encoding='utf-8') as vcf_file:
@@ -43,22 +48,34 @@ class ContactList:
             self.active_key = key
             self.active_value = value
             if self.search(value):
-                print('duplicate found for', key, '/', value)
+                print(f'... consider as a duplicate {key} ({value})')
 
     def search(self, s):
         # TODO: not valid, need to repair
-        s = s.lower()
         occurs = 0
-        for name, phone in self.dic.items():
-            if name != self.active_key:
-                if s in name or s in phone:
+        for item_no, details in self.dic.items():
+            if item_no != self.active_key:
+                name_ratio = SequenceMatcher(None, s['FN'], details['FN']).ratio()
+                tel_ratio = SequenceMatcher(None, s['TEL'], details['TEL']).ratio()
+                if name_ratio > 0.9 or tel_ratio > 0.9:
                     occurs += 1
+                    print(f'!!! found {details["FN"]} ({details["TEL"]}) that is suspect to {s["FN"]} ({s["TEL"]})')
         return occurs
 
     def export(self, path):
+        i = 0
         for record in self.dic.keys():
-            with open(path + self.dic[record]['FN'], mode='w', encoding='utf-8') as f:
-                f.write(self.dic[record].serialize())
+            actual = vobject.readOne('\n'.join([f'{k}:{v}' for k, v in self.dic[record].items()]))
+            actual.name = 'VCARD'
+            actual.useBegin = True
+            # actual.prettyPrint()
+            print_path = os.path.join(path, self.dic[record]['FN']+'.vcf')
+            if os.path.exists(print_path):
+                print(f' overwrite {print_path}')
+            with open(print_path, mode='w', encoding='utf-8') as f:
+                f.write(actual.serialize())
+            i += 1
+        print('.'*3, f'processed {i} files')
 
     def merge(self, path):
         with open(path + self.dic[record]['FN'], mode='a', encoding='utf-8') as f:

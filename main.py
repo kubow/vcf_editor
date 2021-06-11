@@ -119,7 +119,10 @@ class MainWindow:
             if self.await_load:
                 self.contacts_list.delete(0, 'end')
                 for record in self.contacts_lib.dic.keys():
-                    self.contacts_list.insert('end', str(record) + '. ' + self.contacts_lib.dic[record]['FN'])
+                    if isinstance(self.contacts_lib.dic[record]['FN'], str):
+                        self.contacts_list.insert('end', str(record) + '. ' + self.contacts_lib.dic[record]['FN'])
+                    else:
+                        self.contacts_list.insert('end', str(record) + '. ' + self.contacts_lib.dic[record]['FN'].given)
                 self.await_load = False
             self.current_location['text'] = 'Location : {0}'.format(self.curr_loc)
         except AttributeError:
@@ -180,11 +183,12 @@ class MainWindow:
                 final_loc = dialog.askdirectory()
             else:
                 final_loc = dialog.asksaveasfile(mode='w', defaultextension=".txt")
+            self.contacts_lib.find_duplicates()  # for sure report them, later  do different
             if self.curr_loc != final_loc and final_loc:
                 if self.mode.get():
-                    self.contacts_lib.dic.export(final_loc)
+                    self.contacts_lib.export(final_loc)
                 else:
-                    self.contacts_lib.dic.merge(final_loc)
+                    self.contacts_lib.merge(final_loc)
 
     def quit(self):
         self.master.destroy()
