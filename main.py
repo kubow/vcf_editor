@@ -19,7 +19,7 @@ class MainWindow:
     def __init__(self, master):
         self.master = master
         self.active_sel = {
-            'contact': '',
+            'contact': {},
             'index': 0,
             'name': '',
             'number': '',
@@ -63,24 +63,24 @@ class MainWindow:
         self.contacts_list['yscrollcommand'] = self.contacts_scroll.set
         self.contacts_scroll['command'] = self.contacts_list.yview
         
-        self.contacts_list.grid(row=2, column=0, rowspan=8, columnspan=2, sticky='wse', pady=(3, 3), padx=(3, 3))
-        self.contacts_scroll.grid(row=2, column=0, rowspan=8, columnspan=2, sticky='nse', pady=(5, 5), padx=(5, 5))
+        self.contacts_list.grid(row=2, column=0, rowspan=5, columnspan=2, sticky='nsew')
+        self.contacts_scroll.grid(row=2, column=0, rowspan=5, columnspan=2, sticky='nse')
         
         # ===================== (Fields list)
-        self.form['f1_lab'] = tk.Label(self.master, text='Jmeno')
-        self.form['f1_inp'] = tk.Entry(self.master, textvariable=self.active_sel['name'])
-        self.form['f2_lab'] = tk.Label(self.master, text='Cislo')
-        self.form['f2_inp'] = tk.Entry(self.master, textvariable=self.active_sel['number'])
-        self.form['f3_lab'] = tk.Label(self.master, text='Dalsi')
-        self.form['f3_inp'] = tk.Entry(self.master, textvariable=self.active_sel['various'])
-        self.form['f3_inp'].insert(0, 'zatim nic...')
+        # self.form['f1_lab'] = tk.Label(self.master, text='Jmeno')
+        # self.form['f1_inp'] = tk.Entry(self.master, textvariable=self.active_sel['name'])
+        # self.form['f2_lab'] = tk.Label(self.master, text='Cislo')
+        # self.form['f2_inp'] = tk.Entry(self.master, textvariable=self.active_sel['number'])
+        # self.form['f3_lab'] = tk.Label(self.master, text='Dalsi')
+        # self.form['f3_inp'] = tk.Entry(self.master, textvariable=self.active_sel['various'])
+        # self.form['f3_inp'].insert(0, 'zatim nic...')
 
-        self.form['f1_lab'].grid(row=2, column=2, columnspan=1)
-        self.form['f1_inp'].grid(row=2, column=3, columnspan=2)
-        self.form['f2_lab'].grid(row=3, column=2, columnspan=1)
-        self.form['f2_inp'].grid(row=3, column=3, columnspan=2)
-        self.form['f3_lab'].grid(row=4, column=2, columnspan=1)
-        self.form['f3_inp'].grid(row=4, column=3, columnspan=2)
+        # self.form['f1_lab'].grid(row=2, column=2, columnspan=1)
+        # self.form['f1_inp'].grid(row=2, column=3, columnspan=2)
+        # self.form['f2_lab'].grid(row=3, column=2, columnspan=1)
+        # self.form['f2_inp'].grid(row=3, column=3, columnspan=2)
+        # self.form['f3_lab'].grid(row=4, column=2, columnspan=1)
+        # self.form['f3_inp'].grid(row=4, column=3, columnspan=2)
 
         # TODO: 1. Switcher between folder and file mode still not working
         # TODO: 2. Exporting / Merging
@@ -113,36 +113,47 @@ class MainWindow:
         else:
             self.curr_loc = backup  # reverting to previous value
 
+    def build_fields(self, contact):
+        for i in range(1,len(contact)):
+            if self.form.get(f'f{i}_inp'):
+                self.form[f'f{i}_inp'].delete(0, 'end')
+                self.form[f'f{i}_inp'].destroy()
+            if self.form.get(f'f{i}_lab'):
+                self.form[f'f{i}_lab'].destroy()
+            try:
+                y = list(contact)[i]
+                self.form[f'f{i}_lab'] = tk.Label(self.master, text=y)
+                self.form[f'f{i}_inp'] = tk.Entry(self.master)
+                self.form[f'f{i}_lab'].grid(row=1+i, column=3, columnspan=1)
+                self.form[f'f{i}_inp'].grid(row=1+i, column=4, columnspan=2)
+                self.form[f'f{i}_inp'].insert(20, contact[y])
+            except IndexError:
+                print('skipping this one', contact.keys())
+
     def refresh(self):
         try:
-            self.contacts_lib.dic
+            a = self.contacts_lib.dic
             if self.await_load:
+                # clear and fill again contact list
                 self.contacts_list.delete(0, 'end')
-                for record in self.contacts_lib.dic.keys():
-                    if isinstance(self.contacts_lib.dic[record]['FN'], str):
-                        self.contacts_list.insert('end', str(record) + '. ' + self.contacts_lib.dic[record]['FN'])
+                for record in a.keys():
+                    if isinstance(a[record]['FN'], str):
+                        self.contacts_list.insert('end', str(record) + '. ' + a[record]['FN'])
                     else:
-                        self.contacts_list.insert('end', str(record) + '. ' + self.contacts_lib.dic[record]['FN'].given)
+                        self.contacts_list.insert('end', str(record) + '. ' + a[record]['FN'].given)
                 self.await_load = False
             self.current_location['text'] = 'Location : {0}'.format(self.curr_loc)
         except AttributeError:
-            print('no contacts library loaded')
+            print('... no contacts library loaded')
 
     def on_select(self, evt):
         w = evt.widget
         if w == self.contacts_list:  # click in contact list
             if w.curselection():
-                self.form['f1_inp'].delete(0, 'end')
-                self.form['f2_inp'].delete(0, 'end')
                 index = int(w.curselection()[0])
                 value = int(w.get(index).split('.')[0])
-                self.active_sel['index'] = value
-                self.active_sel['contact'] = self.contacts_lib.dic[value]['FN']
-                self.active_sel['number'] = self.contacts_lib.dic[value]['TEL']
-
-                self.form['f1_inp'].insert(20, self.contacts_lib.dic[value]['FN'])
-                self.form['f2_inp'].insert(20, self.contacts_lib.dic[value]['TEL'])
-                # TODO: need to change a lot more
+                self.active_sel['contact'] = self.contacts_lib.dic[value]
+                self.build_fields(self.contacts_lib.dic[value])
         self.refresh()
 
     def which_mode(self):
@@ -198,10 +209,21 @@ def contacts_editor():
     root = tk.Tk()
 
     root.title('Editor VCF kontaktu')
-    root.resizable(10, 10)
+    root.resizable(7, 6)
     # root.geometry('1200x900')
-    #root.columnconfigure(0, weight=2)
-    #root.columnconfigure(1, weight=1)
+    root.columnconfigure(0, weight=1)
+    root.columnconfigure(1, weight=1)
+    root.columnconfigure(2, weight=1)
+    root.columnconfigure(3, weight=1)
+    root.columnconfigure(4, weight=1)
+    root.columnconfigure(5, weight=1)
+    root.rowconfigure(0, weight=1)
+    root.rowconfigure(1, weight=1)
+    root.rowconfigure(2, weight=1)
+    root.rowconfigure(3, weight=1)
+    root.rowconfigure(4, weight=1)
+    root.rowconfigure(5, weight=1)
+    root.rowconfigure(6, weight=1)
     MainWindow(root)
     root.mainloop()
 
