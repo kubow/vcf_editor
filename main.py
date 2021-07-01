@@ -65,24 +65,8 @@ class MainWindow:
         
         self.contacts_list.grid(row=2, column=0, rowspan=5, columnspan=2, sticky='nsew')
         self.contacts_scroll.grid(row=2, column=0, rowspan=5, columnspan=2, sticky='nse')
-        
-        # ===================== (Fields list)
-        # self.form['f1_lab'] = tk.Label(self.master, text='Jmeno')
-        # self.form['f1_inp'] = tk.Entry(self.master, textvariable=self.active_sel['name'])
-        # self.form['f2_lab'] = tk.Label(self.master, text='Cislo')
-        # self.form['f2_inp'] = tk.Entry(self.master, textvariable=self.active_sel['number'])
-        # self.form['f3_lab'] = tk.Label(self.master, text='Dalsi')
-        # self.form['f3_inp'] = tk.Entry(self.master, textvariable=self.active_sel['various'])
-        # self.form['f3_inp'].insert(0, 'zatim nic...')
 
-        # self.form['f1_lab'].grid(row=2, column=2, columnspan=1)
-        # self.form['f1_inp'].grid(row=2, column=3, columnspan=2)
-        # self.form['f2_lab'].grid(row=3, column=2, columnspan=1)
-        # self.form['f2_inp'].grid(row=3, column=3, columnspan=2)
-        # self.form['f3_lab'].grid(row=4, column=2, columnspan=1)
-        # self.form['f3_inp'].grid(row=4, column=3, columnspan=2)
-
-        # TODO: 1. Switcher between folder and file mode still not working
+        # TODO: 1. Switcher between folder and file mode not working
         # TODO: 2. Exporting / Merging
 
         self.set_dir()  # first app init is hardcoded to folder
@@ -114,19 +98,28 @@ class MainWindow:
             self.curr_loc = backup  # reverting to previous value
 
     def build_fields(self, contact):
-        for i in range(1,len(contact)):
-            if self.form.get(f'f{i}_inp'):
-                self.form[f'f{i}_inp'].delete(0, 'end')
-                self.form[f'f{i}_inp'].destroy()
-            if self.form.get(f'f{i}_lab'):
-                self.form[f'f{i}_lab'].destroy()
+        # the structure hardcoded for now, dynamic too cluttered
+        if isinstance(contact['FN'], str):
+            x = {'given': '','family':contact['FN'],'telephone': contact['TEL']}
+        else:
+            x = {
+                'given': contact['FN'].given,'family':contact['FN'].family,
+                'telephone': contact['TEL']
+                }
+        i=0
+        for key in x.keys():
+            i+=1
+            if self.form.get(f'f{key}_inp'):
+                self.form[f'f{key}_inp'].delete(0, 'end')
+                self.form[f'f{key}_inp'].destroy()
+            if self.form.get(f'f{key}_lab'):
+                self.form[f'f{key}_lab'].destroy()
             try:
-                y = list(contact)[i]
-                self.form[f'f{i}_lab'] = tk.Label(self.master, text=y)
-                self.form[f'f{i}_inp'] = tk.Entry(self.master)
-                self.form[f'f{i}_lab'].grid(row=1+i, column=3, columnspan=1)
-                self.form[f'f{i}_inp'].grid(row=1+i, column=4, columnspan=2)
-                self.form[f'f{i}_inp'].insert(20, contact[y])
+                self.form[f'f{key}_lab'] = tk.Label(self.master, text=key)
+                self.form[f'f{key}_inp'] = tk.Entry(self.master)
+                self.form[f'f{key}_lab'].grid(row=1+i, column=3, columnspan=1)
+                self.form[f'f{key}_inp'].grid(row=1+i, column=4, columnspan=2)
+                self.form[f'f{key}_inp'].insert(20, x[key])
             except IndexError:
                 print('skipping this one', contact.keys())
 
