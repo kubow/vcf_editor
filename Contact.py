@@ -6,7 +6,6 @@ try:
 except ImportError:
     print('... cannot work with vcf contacts')
     can_vcf = False
-
 class ContactList:
     def __init__(self, vcf, is_dir=False):
         self.counter = 0
@@ -83,6 +82,8 @@ class ContactList:
             #for record in self.dic.keys():
             #    f.write(self.dic[record].serialize())
 
+def blank():
+    return vobject.vCard()
 
 def export_to_vcf(location, vc):
     """

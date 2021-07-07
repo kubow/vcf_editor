@@ -11,31 +11,28 @@ except ImportError:
     print('using small tkinter (windows way)')
 
 # Contact list constructor
-from Contact import ContactList
+from Contact import ContactList, blank
 
 
 # Main logic and layout
 class MainWindow:
     def __init__(self, master):
         self.master = master
-        self.active_sel = {
+        self.active = {
             'contact': {},
             'index': 0,
-            'name': '',
-            'number': '',
-            'various': ''
+            'loading': True,  # flag after load a file/dir
+            'location': '',
+            'mode': tk.IntVar(value=0)  # folder value active
         }
-        self.await_load = True
         self.btn = {}
-        self.curr_loc = ''
         self.form = {}
-        self.mode = tk.IntVar(value=0)  # folder value active
         self.contacts_lib = ''
         
         # ===================== (Main Menu + controls)
-        self.current_location = tk.Label(self.master, text='Location : {0}'.format(self.curr_loc))
-        self.radio1 = tk.Radiobutton(self.master, text='Adresar', value=False, variable=self.mode, command=self.set_dir)
-        self.radio2 = tk.Radiobutton(self.master, text='Soubor', value=True, variable=self.mode, command=self.set_file)
+        self.current_location = tk.Label(self.master, text='Location : {0}'.format(self.active['location']))
+        self.radio1 = tk.Radiobutton(self.master, text='Adresar', value=False, variable=self.active['mode'], command=self.set_dir)
+        self.radio2 = tk.Radiobutton(self.master, text='Soubor', value=True, variable=self.active['mode'], command=self.set_file)
         
         self.current_location.grid(row=0, column=0, columnspan=3, sticky='w')
         self.radio1.grid(row=0, column=4)
@@ -45,7 +42,7 @@ class MainWindow:
         self.btn['open'] = tk.Button(self.master, text='open', command=self.browse_dir)
         self.btn['expt'] = tk.Button(self.master, text='export', command=self.export)
         self.btn['prev'] = tk.Button(self.master, text='<', command=self.prev)
-        self.btn['save'] = tk.Button(self.master, text='save')  # editing not yet implemented
+        self.btn['save'] = tk.Button(self.master, text='save', command=self.save) 
         self.btn['next'] = tk.Button(self.master, text='>', command=self.next)
         self.btn['exit'] = tk.Button(self.master, text='quit', command=self.quit)
         self.btn['open'].grid(row=1, column=0, pady=5, sticky='nsew')
@@ -72,30 +69,30 @@ class MainWindow:
         self.set_dir()  # first app init is hardcoded to folder
 
     def set_dir(self):
-        if self.curr_loc:
-            print('browsing folder', self.curr_loc)
+        if self.active['location']:
+            print('browsing folder', self.active['location'])
         self.browse_dir()
         self.refresh()
 
     def set_file(self):
-        if self.curr_loc:
-            print('setting file', self.curr_loc)
+        if self.active['location']:
+            print('setting file', self.active['location'])
         self.browse_dir()
         self.refresh()
 
     def browse_dir(self):
-        backup = self.curr_loc
-        if self.mode.get():
-            self.curr_loc = dialog.askopenfilename()
+        backup = self.active['location']
+        if self.active['mode'].get():
+            self.active['location'] = dialog.askopenfilename()
             really = False
         else:
-            self.curr_loc = dialog.askdirectory()
+            self.active['location'] = dialog.askdirectory()
             really = True
-        if self.curr_loc:
-            self.contacts_lib = ContactList(self.curr_loc, is_dir=really)
-            self.await_load = True
+        if self.active['location']:
+            self.contacts_lib = ContactList(self.active['location'], is_dir=really)
+            self.active['loading'] = True
         else:
-            self.curr_loc = backup  # reverting to previous value
+            self.active['location'] = backup  # reverting to previous value
 
     def build_fields(self, contact):
         # the structure hardcoded for now, dynamic too cluttered
@@ -126,7 +123,7 @@ class MainWindow:
     def refresh(self):
         try:
             a = self.contacts_lib.dic
-            if self.await_load:
+            if self.active['loading']:
                 # clear and fill again contact list
                 self.contacts_list.delete(0, 'end')
                 for record in a.keys():
@@ -134,8 +131,8 @@ class MainWindow:
                         self.contacts_list.insert('end', str(record) + '. ' + a[record]['FN'])
                     else:
                         self.contacts_list.insert('end', str(record) + '. ' + a[record]['FN'].given)
-                self.await_load = False
-            self.current_location['text'] = 'Location : {0}'.format(self.curr_loc)
+                self.active['loading'] = False
+            self.current_location['text'] = 'Location : {0}'.format(self.active['location'])
         except AttributeError:
             print('... no contacts library loaded')
 
@@ -145,54 +142,70 @@ class MainWindow:
             if w.curselection():
                 index = int(w.curselection()[0])
                 value = int(w.get(index).split('.')[0])
-                self.active_sel['contact'] = self.contacts_lib.dic[value]
+                self.active['contact'] = self.contacts_lib.dic[value]
                 self.build_fields(self.contacts_lib.dic[value])
         self.refresh()
 
     def which_mode(self):
-        return False if self.mode.get() else True
+        return False if self.active['mode'].get() else True
 
     def prev(self):
         if self.contacts_lib:
-            if self.active_sel['index'] > 1:
-                self.active_sel['index'] -= 1
+            if self.active['index'] > 1:
+                self.active['index'] -= 1
             self.control()
 
     def next(self):
         if self.contacts_lib:
-            if self.active_sel['index'] < len(self.contacts_lib.dic):
-                self.active_sel['index'] += 1
+            if self.active['index'] < len(self.contacts_lib.dic):
+                self.active['index'] += 1
             self.control()
 
     def control(self):
         if (self.contacts_list.curselection()[0]+1) < len(self.contacts_lib.dic):
-            self.active_sel['contact'] = self.contacts_lib.dic[int(self.active_sel['index'])]['FN']
-            self.active_sel['number'] = self.contacts_lib.dic[int(self.active_sel['index'])]['TEL']
+            self.active['contact'] = self.contacts_lib.dic[int(self.active['index'])]['FN']
+            self.active['number'] = self.contacts_lib.dic[int(self.active['index'])]['TEL']
             self.form['f1_inp'].delete(0, 'end')
             self.form['f2_inp'].delete(0, 'end')
-            self.form['f1_inp'].insert(20, self.active_sel['contact'])
-            self.form['f2_inp'].insert(20, self.active_sel['number'])
-            print('Setting', str(self.contacts_list.curselection()[0]+1), '>', str(self.active_sel['index']), 'record')
+            self.form['f1_inp'].insert(20, self.active['contact'])
+            self.form['f2_inp'].insert(20, self.active['number'])
+            print('Setting', str(self.contacts_list.curselection()[0]+1), '>', str(self.active['index']), 'record')
             self.contacts_list.selection_clear(0, "end")
-            self.contacts_list.selection_set(int(self.active_sel['index'])-1)
-            self.contacts_list.see(int(self.active_sel['index'])-1)
-            self.contacts_list.activate(int(self.active_sel['index'])-1)
-            self.contacts_list.selection_anchor(int(self.active_sel['index'])-1)
-            # self.contacts_list.select_set(int(self.active_sel['index'])-1)
+            self.contacts_list.selection_set(int(self.active['index'])-1)
+            self.contacts_list.see(int(self.active['index'])-1)
+            self.contacts_list.activate(int(self.active['index'])-1)
+            self.contacts_list.selection_anchor(int(self.active['index'])-1)
+            # self.contacts_list.select_set(int(self.active['index'])-1)
             # self.contacts_list.event_generate("<<ListboxSelect>>")
 
     def export(self):
         if self.contacts_lib:
-            if self.mode.get():  # file mode, export to directory
+            if self.active['mode'].get():  # file mode, export to directory
                 final_loc = dialog.askdirectory()
             else:
                 final_loc = dialog.asksaveasfile(mode='w', defaultextension=".txt")
             self.contacts_lib.find_duplicates()  # for sure report them, later  do different
-            if self.curr_loc != final_loc and final_loc:
-                if self.mode.get():
+            if self.active['location'] != final_loc and final_loc:
+                if self.active['mode'].get():
                     self.contacts_lib.export(final_loc)
                 else:
                     self.contacts_lib.merge(final_loc)
+
+    def save(self):
+        if self.active['contact']:
+            vcf_path = self.active['location']
+            orig_name = ''  # sestaveni jmena bude komplexnejsi
+            v = blank()
+            name = self.form[f'fgiven_inp'].get()
+            family = self.form[f'ffamily_inp'].get()
+            phone = self.form[f'ftelephone_inp'].get()
+            for part in self.active['contact'].keys():
+                v.add(part)
+                setattr(v, part, self.active['contact'][part])
+            with open(vcf_path, 'w') as original:
+                original.write(v.prettyPrint())
+
+
 
     def quit(self):
         self.master.destroy()

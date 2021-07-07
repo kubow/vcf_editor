@@ -13,7 +13,8 @@ Depend on these python3 modules:
 
 ## To do
 
-- 
+- seznam nezobrazuje prijmeni, opravit
+- save dokoncit
 
 https://www.tutorialkart.com/python/tkinter/entry/
 
