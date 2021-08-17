@@ -64,7 +64,9 @@ class ContactList:
     def export(self, path):
         i = 0
         for record in self.dic.keys():
-            actual = vobject.readOne('\n'.join([f'{k}:{v}' for k, v in self.dic[record].items()]))
+            actual = vobject.readOne(
+                '\n'.join(f'{k}:{v}' for k, v in self.dic[record].items())
+            )
             actual.name = 'VCARD'
             actual.useBegin = True
             # actual.prettyPrint()
@@ -82,8 +84,34 @@ class ContactList:
             #for record in self.dic.keys():
             #    f.write(self.dic[record].serialize())
 
-def blank():
-    return vobject.vCard()
+def vcf_object(source_dic=''):
+    if isinstance(source_dic, dict):
+        m = vobject.readOne('\n'.join(f'{k}:{v}' for k, v in source_dic.items()))
+        m.name = 'VCARD'
+        m.useBegin = True
+        # m.version = '2.1'
+        # m.prettyPrint()
+    elif not source_dic:
+        m = vobject.vCard()
+        m.version = '2.1'
+    else:
+        m = None
+    return m
+
+def smash_it(path=''):
+    try:
+        if os.path.isfile(path):
+            os.remove(path)
+        else:
+            print(f'... soubor {path} neexistuje nebo neni vubec soubor')
+    except OSError as e:  # 
+        print ("!!! Chyba pri mazani %s - %s." % (e.filename, e.strerror))
+
+def name_value(first='', last=''):
+    if first and last:
+        m = vobject.vcard.Name(family=last, given=first)
+        return ';'.join((m.family, m.given, m.prefix, m.suffix, m.additional))
+
 
 def export_to_vcf(location, vc):
     """
@@ -95,10 +123,9 @@ def export_to_vcf(location, vc):
     with open(location + vcf_name, mode='w', encoding='utf-8') as f:
         f.write(vc.serialize())
 
-
 def append_to_vcf(location, vc):
     """
-    exports vobject to a *.vcf file
+    appends vobject to a *.vcf file
     :param location: where to write
     :param vc: single vobject instance
     """
@@ -106,11 +133,28 @@ def append_to_vcf(location, vc):
     with open(location + vcf_name, mode='a', encoding='utf-8') as f:
         f.write(vc.serialize())
 
-
 if __name__ == '__main__':
-    print("O'really?")
-    #home_folder = 'C:\\Users\\jirib\\Downloads\\SD_samci\\'
-    #file_name = home_folder + '00001.vcf'
+    home_folder = 'C:\\Users\\jirib\\Downloads\\SD_samci\\'
+    file_name = home_folder + 'okna Morávek.vcf'
+    print(f"... Testing Contact Class with source {file_name}")
+    try:
+        a = vcf_object(ContactList(file_name).dic)
+    except:
+        a = vcf_object()
+    if a.n in locals():
+        a.n = name_value('John', 'Smith')
+    else:
+        a.add('n').value = name_value('John', 'Smith')
+    if a.n in locals():
+        a.fn = 'John Smith'
+    else:
+        a.add('fn').value = 'John Smith'
+    if a.tel in locals():
+        a.n = '576852321'
+    else:
+        a.add('tel').value = '576852321'
+    print(dir(a))
+    
 
     # debug_object = ContactList(file_name)
     #debug_object = ContactList(home_folder+'Dohromady', is_dir=True)

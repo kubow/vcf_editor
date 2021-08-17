@@ -11,7 +11,7 @@ except ImportError:
     print('using small tkinter (windows way)')
 
 # Contact list constructor
-from Contact import ContactList, blank
+import Contact
 
 
 # Main logic and layout
@@ -89,7 +89,7 @@ class MainWindow:
             self.active['location'] = dialog.askdirectory()
             really = True
         if self.active['location']:
-            self.contacts_lib = ContactList(self.active['location'], is_dir=really)
+            self.contacts_lib = Contact.ContactList(self.active['location'], is_dir=really)
             self.active['loading'] = True
         else:
             self.active['location'] = backup  # reverting to previous value
@@ -138,16 +138,15 @@ class MainWindow:
 
     def on_select(self, evt):
         w = evt.widget
-        if w == self.contacts_list:  # click in contact list
-            if w.curselection():
-                index = int(w.curselection()[0])
-                value = int(w.get(index).split('.')[0])
-                self.active['contact'] = self.contacts_lib.dic[value]
-                self.build_fields(self.contacts_lib.dic[value])
+        if w == self.contacts_list and w.curselection():  # click in contact list
+            index = int(w.curselection()[0])
+            value = int(w.get(index).split('.')[0])
+            self.active['contact'] = self.contacts_lib.dic[value]
+            self.build_fields(self.contacts_lib.dic[value])
         self.refresh()
 
     def which_mode(self):
-        return False if self.active['mode'].get() else True
+        return not self.active['mode'].get()
 
     def prev(self):
         if self.contacts_lib:
@@ -192,20 +191,37 @@ class MainWindow:
                     self.contacts_lib.merge(final_loc)
 
     def save(self):
-        if self.active['contact']:
-            vcf_path = self.active['location']
-            orig_name = ''  # sestaveni jmena bude komplexnejsi
-            v = blank()
-            name = self.form[f'fgiven_inp'].get()
-            family = self.form[f'ffamily_inp'].get()
-            phone = self.form[f'ftelephone_inp'].get()
-            for part in self.active['contact'].keys():
-                v.add(part)
-                setattr(v, part, self.active['contact'][part])
-            with open(vcf_path, 'w') as original:
-                original.write(v.prettyPrint())
+        if not self.active['contact']:
+            return
+        if self.active['mode'].get():
+            print('...not implemented yet')
+        else:  # folder mode
+            self.build_contact()
 
-
+    def build_contact(self):
+        if self.active['contact']['N'].family:
+            n = self.active['contact']['N'].given + ' ' + self.active['contact']['N'].family
+        else:
+            n = self.active['contact']['FN']
+        path = self.active['location']+'/'+n+'.vcf'
+        v = Contact.vcf_object(self.active['contact'])
+        name = self.form[f'fgiven_inp'].get()
+        family = self.form[f'ffamily_inp'].get()
+        phone = self.form[f'ftelephone_inp'].get()
+        if (name+'  '+family).strip() != v.fn.value.strip():  # TODO: kontrola zda neblbne jmeno
+            self.active['loading'] = True
+            v.n.value = Contact.name_value(name, family)
+            v.fn.value = name+' '+family
+            Contact.smash_it(path)
+            path = path.replace(n,name+' '+family)
+        if phone != v.tel.value:
+            self.active['loading'] = True
+            v.tel.value = phone
+        if self.active['loading']:
+            with open(path, 'w', encoding="utf-8") as original:  # bud prepis nebo novy
+                original.write(v.serialize())
+            self.contacts_lib = Contact.ContactList(self.active['location'], is_dir=True)
+            self.refresh()
 
     def quit(self):
         self.master.destroy()
