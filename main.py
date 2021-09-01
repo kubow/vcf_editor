@@ -13,7 +13,6 @@ except ImportError:
 # Contact list constructor
 import Contact
 
-
 # Main logic and layout
 class MainWindow:
     def __init__(self, master):
@@ -103,9 +102,7 @@ class MainWindow:
                 'given': contact['FN'].given,'family':contact['FN'].family,
                 'telephone': contact['TEL']
                 }
-        i=0
-        for key in x.keys():
-            i+=1
+        for i, key in enumerate(x, start=1):
             if self.form.get(f'f{key}_inp'):
                 self.form[f'f{key}_inp'].delete(0, 'end')
                 self.form[f'f{key}_inp'].destroy()
@@ -130,7 +127,7 @@ class MainWindow:
                     if isinstance(a[record]['FN'], str):
                         self.contacts_list.insert('end', str(record) + '. ' + a[record]['FN'])
                     else:
-                        self.contacts_list.insert('end', str(record) + '. ' + a[record]['FN'].given)
+                        self.contacts_list.insert('end', f'{str(record)}. {a[record]["FN"].given} {a[record]["FN"].family}')
                 self.active['loading'] = False
             self.current_location['text'] = 'Location : {0}'.format(self.active['location'])
         except AttributeError:
@@ -204,24 +201,16 @@ class MainWindow:
         else:
             n = self.active['contact']['FN']
         path = self.active['location']+'/'+n+'.vcf'
-        v = Contact.vcf_object(self.active['contact'])
         name = self.form[f'fgiven_inp'].get()
         family = self.form[f'ffamily_inp'].get()
         phone = self.form[f'ftelephone_inp'].get()
-        if (name+'  '+family).strip() != v.fn.value.strip():  # TODO: kontrola zda neblbne jmeno
-            self.active['loading'] = True
-            v.n.value = Contact.name_value(name, family)
-            v.fn.value = name+' '+family
-            Contact.smash_it(path)
-            path = path.replace(n,name+' '+family)
-        if phone != v.tel.value:
-            self.active['loading'] = True
-            v.tel.value = phone
-        if self.active['loading']:
-            with open(path, 'w', encoding="utf-8") as original:  # bud prepis nebo novy
-                original.write(v.serialize())
-            self.contacts_lib = Contact.ContactList(self.active['location'], is_dir=True)
-            self.refresh()
+        v = Contact.vcf_object(name, family, phone)
+        # Contact.smash_it(path)
+        path = path.replace(n,name+' '+family)
+        with open(path, 'w', encoding="utf-8") as original:  # bud prepis nebo novy
+            original.write(Contact.quoted_printable(v))
+        self.contacts_lib = Contact.ContactList(self.active['location'], is_dir=True)
+        self.refresh()
 
     def quit(self):
         self.master.destroy()
