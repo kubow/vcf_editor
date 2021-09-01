@@ -13,8 +13,8 @@ Depend on these python3 modules:
 
 ## To do
 
-- seznam nezobrazuje prijmeni, opravit
-- save dokoncit
+- pri save pouzit quoted printable konverzi
+- save dokoncit 
 
 
 ## Resources (backup for now)
@@ -30,3 +30,9 @@ https://www.tutorialkart.com/python/tkinter/entry/
 - [VCF Fields Definition (N section)](https://datatracker.ietf.org/doc/html/rfc6350#section-6.2.2)
 - [VCF File Definition](https://docs.fileformat.com/email/vcf/)
 - [VCF Linux Tools](https://github.com/vcftools/vcftools)
+- [Error VCF Parsing](https://stackoverflow.com/questions/38410742/error-in-parsing-vcard-file-using-python-vobject-package)
+### Encoding to hexa-chars
+- [Encoding/Decoding to Quoted printable](https://www.webatic.com/quoted-printable-convertor)
+- [ASCII to HEX](https://stackoverflow.com/questions/35536670/how-to-convert-ascii-to-hex-in-python)
+- [convert string to bytes](https://stackoverflow.com/questions/7585435/best-way-to-convert-string-to-bytes-in-python-3#17500651)
+- [built-in qoupri module](https://docs.python.org/3/library/quopri.html)

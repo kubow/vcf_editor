@@ -1,5 +1,6 @@
 from difflib import SequenceMatcher
 import os
+import quopri
 try:
     import vobject
     can_vcf = True
@@ -79,23 +80,31 @@ class ContactList:
         print('.'*3, f'processed {i} files')
 
     def merge(self, path):
-        with open(path + self.dic[record]['FN'], mode='a', encoding='utf-8') as f:
+        with open(path + self.dic[self.active_key]['FN'], mode='a', encoding='utf-8') as f:
             f.write(self.dic.serialize())
             #for record in self.dic.keys():
             #    f.write(self.dic[record].serialize())
 
-def vcf_object(source_dic=''):
-    if isinstance(source_dic, dict):
-        m = vobject.readOne('\n'.join(f'{k}:{v}' for k, v in source_dic.items()))
-        m.name = 'VCARD'
-        m.useBegin = True
-        # m.version = '2.1'
-        # m.prettyPrint()
-    elif not source_dic:
-        m = vobject.vCard()
-        m.version = '2.1'
-    else:
-        m = None
+def open_vcf(location):
+    with open(location, mode='r', encoding='utf-8') as vcf_file:
+        for v in vobject.readComponents(vcf_file):
+            print(v.serialize())
+            print('*'*10)
+            return v
+
+def vcf_object(first='', last='', tel=''):
+    m = vobject.vCard()
+    m.version = '2.1'
+    if first or last:    
+        o = m.add('fn')
+        # o.type_param = 'ENCODING=QUOTED-PRINTABLE;CHARSET=UTF-8'
+        o.value = f'{first} {last}'
+        o = m.add('n')
+        o.value = vobject.vcard.Name(family=last, given=first)
+    if tel:
+        o = m.add('tel')
+        o.type_param = 'cell'
+        o.value = tel
     return m
 
 def smash_it(path=''):
@@ -109,8 +118,16 @@ def smash_it(path=''):
 
 def name_value(first='', last=''):
     if first and last:
-        m = vobject.vcard.Name(family=last, given=first)
-        return ';'.join((m.family, m.given, m.prefix, m.suffix, m.additional))
+        # return ';'.join((m.family, m.given, m.prefix, m.suffix, m.additional))
+        return vobject.vcard.Name(family=last, given=first)
+
+def quoted_printable(vcf, serialize=True):
+    if vcf and serialize:
+        #first = quopri.encodestring(first.encode('utf-8'))
+        #last = quopri.encodestring(last.encode('utf-8'))
+        a = vcf.serialize()
+        pre = 'ENCODING=QUOTED-PRINTABLE;CHARSET=UTF-8:'
+        return quopri.encodestring(vcf.serialize().encode('utf-8'))
 
 
 def export_to_vcf(location, vc):
@@ -134,19 +151,19 @@ def append_to_vcf(location, vc):
         f.write(vc.serialize())
 
 if __name__ == '__main__':
-    home_folder = 'C:\\Users\\jirib\\Downloads\\SD_samci\\'
-    file_name = home_folder + 'okna Morávek.vcf'
+    home_folder = 'C:\\Users\\jirib\\Downloads\\SD_samci\\Dohromady_zmenene\\'
+    file_name = home_folder + 'Anicka Mirosová.vcf'
     print(f"... Testing Contact Class with source {file_name}")
     try:
-        a = vcf_object(ContactList(file_name).dic)
+        a = open_vcf(file_name)
     except:
-        a = vcf_object()
-    if a.n in locals():
-        a.n = name_value('John', 'Smith')
-    else:
+        a = vcf_object('John', 'Smith', '576852321')
+    try:
+        print(a.n)
+    except:
         a.add('n').value = name_value('John', 'Smith')
-    if a.n in locals():
-        a.fn = 'John Smith'
+    if a.fn in locals():
+        print(a.fn)
     else:
         a.add('fn').value = 'John Smith'
     if a.tel in locals():
