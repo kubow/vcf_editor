@@ -13,9 +13,10 @@ Depend on these python3 modules:
 
 ## To do
 
-- pri save pouzit quoted printable konverzi
-- save dokoncit 
-
+- Rebuild ContactList class (property dic will hold actual vobjects)
+- Loading contact cards with special character sets (tested only utf-8 + win1250)
+- Phones sanizitation
+- Extend with contact details (picture, adresses, etc)
 
 ## Resources (backup for now)
 ### TkInter
