@@ -95,11 +95,11 @@ class MainWindow:
 
     def build_fields(self, contact):
         # the structure hardcoded for now, dynamic too cluttered
-        if isinstance(contact['FN'], str):
-            x = {'given': '','family':contact['FN'],'telephone': contact['TEL']}
+        if isinstance(contact['N'], str):
+            x = {'given': '','family':contact['N'],'telephone': contact['TEL']}
         else:
             x = {
-                'given': contact['FN'].given,'family':contact['FN'].family,
+                'given': contact['N'].given,'family':contact['N'].family,
                 'telephone': contact['TEL']
                 }
         for i, key in enumerate(x, start=1):
@@ -204,10 +204,11 @@ class MainWindow:
         name = self.form[f'fgiven_inp'].get()
         family = self.form[f'ffamily_inp'].get()
         phone = self.form[f'ftelephone_inp'].get()
-        v = Contact.vcf_object(name, family, phone)
-        # Contact.smash_it(path)
+        v = Contact.vcf_object(name, family, phone, path)
+        Contact.smash_it(path)
         path = path.replace(n,name+' '+family)
-        with open(path, 'w', encoding="utf-8") as original:  # bud prepis nebo novy
+        # with open(path, 'w', encoding="utf-8") as original:  # bud prepis nebo novy
+        with open(path, 'wb') as original: 
             original.write(Contact.quoted_printable(v))
         self.contacts_lib = Contact.ContactList(self.active['location'], is_dir=True)
         self.refresh()

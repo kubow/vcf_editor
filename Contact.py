@@ -11,8 +11,8 @@ class ContactList:
     def __init__(self, vcf, is_dir=False):
         self.counter = 0
         self.dic = {}
-        self.active_key = ''
-        self.active_value = ''
+        self.ac_key = ''
+        self.ac_val = ''
         try:
             if len(vcf) > 0 and can_vcf:
                 if is_dir:  # this way counting number of files
@@ -45,8 +45,8 @@ class ContactList:
     def find_duplicates(self):
         # TODO: not valid, need to repair
         for key, value in self.dic.items():
-            self.active_key = key
-            self.active_value = value
+            self.ac_key = key
+            self.ac_val = value
             if self.search(value):
                 print(f'... consider as a duplicate {key} ({value})')
 
@@ -54,7 +54,7 @@ class ContactList:
         # TODO: not valid, need to repair
         occurs = 0
         for item_no, details in self.dic.items():
-            if item_no != self.active_key:
+            if item_no != self.ac_key:
                 name_ratio = SequenceMatcher(None, s['FN'], details['FN']).ratio()
                 tel_ratio = SequenceMatcher(None, s['TEL'], details['TEL']).ratio()
                 if name_ratio > 0.9 or tel_ratio > 0.9:
@@ -80,31 +80,43 @@ class ContactList:
         print('.'*3, f'processed {i} files')
 
     def merge(self, path):
-        with open(path + self.dic[self.active_key]['FN'], mode='a', encoding='utf-8') as f:
-            f.write(self.dic.serialize())
+        if os.path.isdir(path.name):
+            with open(path + self.dic[self.ac_key]['FN'], mode='a', encoding='utf-8') as f:
+                f.write(self.dic.serialize())
+        else:
+            with open(path.name, mode='a', encoding='utf-8') as f:
+                f.write(self.dic.serialize())
             #for record in self.dic.keys():
             #    f.write(self.dic[record].serialize())
 
-def open_vcf(location):
+def open_vcf(location, debug=True):
     with open(location, mode='r', encoding='utf-8') as vcf_file:
         for v in vobject.readComponents(vcf_file):
-            print(v.serialize())
-            print('*'*10)
+            if debug:
+                print(v.serialize())
+                print('*'*20)
             return v
 
-def vcf_object(first='', last='', tel=''):
-    m = vobject.vCard()
-    m.version = '2.1'
-    if first or last:    
-        o = m.add('fn')
-        # o.type_param = 'ENCODING=QUOTED-PRINTABLE;CHARSET=UTF-8'
-        o.value = f'{first} {last}'
-        o = m.add('n')
-        o.value = vobject.vcard.Name(family=last, given=first)
-    if tel:
-        o = m.add('tel')
-        o.type_param = 'cell'
-        o.value = tel
+def vcf_object(first='', last='', tel='', loc=False):
+    if loc:
+        m = open_vcf(loc)
+        print(f'replacing values in {loc} ({first} {last} / {tel})')
+        m.n.value.family = last
+        m.n.value.given = first
+        m.fn.value = f'{first} {last}'
+        m.tel.value = tel
+    else:        
+        m = vobject.vCard()
+        m.version = '2.1'
+        if first or last:    
+            o = m.add('fn')
+            o.value = f'{first} {last}'
+            o = m.add('n')
+            o.value = vobject.vcard.Name(family=last, given=first)
+        if tel:
+            o = m.add('tel')
+            o.type_param = 'cell'
+            o.value = tel
     return m
 
 def smash_it(path=''):
@@ -125,10 +137,11 @@ def quoted_printable(vcf, serialize=True):
     if vcf and serialize:
         #first = quopri.encodestring(first.encode('utf-8'))
         #last = quopri.encodestring(last.encode('utf-8'))
-        a = vcf.serialize()
-        pre = 'ENCODING=QUOTED-PRINTABLE;CHARSET=UTF-8:'
-        return quopri.encodestring(vcf.serialize().encode('utf-8'))
-
+        a = quopri.encodestring(vcf.serialize().encode('utf-8'))
+        a = a.replace(b'\nN:',b'\nN;ENCODING=QUOTED-PRINTABLE;CHARSET=UTF-8:')
+        a = a.replace(b'FN:',b'FN;ENCODING=QUOTED-PRINTABLE;CHARSET=UTF-8:')
+        a = a.replace(b';CHARSET=3DUTF-8:', b';ENCODING=QUOTED-PRINTABLE;CHARSET=UTF-8:')
+        return a
 
 def export_to_vcf(location, vc):
     """
@@ -162,15 +175,15 @@ if __name__ == '__main__':
         print(a.n)
     except:
         a.add('n').value = name_value('John', 'Smith')
-    if a.fn in locals():
+    try:
         print(a.fn)
-    else:
+    except:
         a.add('fn').value = 'John Smith'
-    if a.tel in locals():
-        a.n = '576852321'
-    else:
+    try:
+        print(a.tel)
+    except:
         a.add('tel').value = '576852321'
-    print(dir(a))
+    print(quoted_printable(a))
     
 
     # debug_object = ContactList(file_name)
