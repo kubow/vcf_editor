@@ -36,4 +36,7 @@ https://www.tutorialkart.com/python/tkinter/entry/
 - [Encoding/Decoding to Quoted printable](https://www.webatic.com/quoted-printable-convertor)
 - [ASCII to HEX](https://stackoverflow.com/questions/35536670/how-to-convert-ascii-to-hex-in-python)
 - [convert string to bytes](https://stackoverflow.com/questions/7585435/best-way-to-convert-string-to-bytes-in-python-3#17500651)
+- [python encodings guide](https://realpython.com/python-encodings-guide/)
 - [built-in qoupri module](https://docs.python.org/3/library/quopri.html)
+- [special ASCII characters](http://www.addressmunger.com/special_ascii_characters/)
+- [UTF-8 charcter table](https://www.utf8-chartable.de/)
