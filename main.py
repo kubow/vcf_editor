@@ -127,7 +127,11 @@ class MainWindow:
                     if isinstance(a[record]['FN'], str):
                         self.contacts_list.insert('end', str(record) + '. ' + a[record]['FN'])
                     else:
-                        self.contacts_list.insert('end', f'{str(record)}. {a[record]["FN"].given} {a[record]["FN"].family}')
+                        self.contacts_list.insert(
+                            'end',
+                            f'{record}. {a[record]["FN"].given} {a[record]["FN"].family}',
+                        )
+
                 self.active['loading'] = False
             self.current_location['text'] = 'Location : {0}'.format(self.active['location'])
         except AttributeError:
@@ -180,7 +184,7 @@ class MainWindow:
                 final_loc = dialog.askdirectory()
             else:
                 final_loc = dialog.asksaveasfile(mode='w', defaultextension=".txt")
-            self.contacts_lib.find_duplicates()  # for sure report them, later  do different
+            # self.contacts_lib.find_duplicates()  # for sure report them, later  do different
             if self.active['location'] != final_loc and final_loc:
                 if self.active['mode'].get():
                     self.contacts_lib.export(final_loc)
@@ -201,9 +205,9 @@ class MainWindow:
         else:
             n = self.active['contact']['FN']
         path = self.active['location']+'/'+n+'.vcf'
-        name = self.form[f'fgiven_inp'].get()
-        family = self.form[f'ffamily_inp'].get()
-        phone = self.form[f'ftelephone_inp'].get()
+        name = self.form['fgiven_inp'].get()
+        family = self.form['ffamily_inp'].get()
+        phone = self.form['ftelephone_inp'].get()
         v = Contact.vcf_object(name, family, phone, path)
         Contact.smash_it(path)
         path = path.replace(n,name+' '+family)
