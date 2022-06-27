@@ -126,7 +126,7 @@ def smash_it(path=''):
         else:
             print(f'... soubor {path} neexistuje nebo neni vubec soubor')
     except OSError as e:  # 
-        print ("!!! Chyba pri mazani %s - %s." % (e.filename, e.strerror))
+        print(f"!!! Chyba pri mazani {e.filename} - {e.strerror}.")
 
 def name_value(first='', last=''):
     if first and last:
@@ -149,7 +149,7 @@ def export_to_vcf(location, vc):
     :param location: where to write
     :param vc: single vobject instance
     """
-    vcf_name = vc.fn.value + '.vcf'  # .encode().decode('unicode-escape')
+    vcf_name = f'{vc.fn.value}.vcf'   # .encode().decode('unicode-escape')
     with open(location + vcf_name, mode='w', encoding='utf-8') as f:
         f.write(vc.serialize())
 
@@ -159,29 +159,29 @@ def append_to_vcf(location, vc):
     :param location: where to write
     :param vc: single vobject instance
     """
-    vcf_name = vc.fn.value + '.vcf'  # .encode().decode('unicode-escape')
+    vcf_name = f'{vc.fn.value}.vcf'   # .encode().decode('unicode-escape')
     with open(location + vcf_name, mode='a', encoding='utf-8') as f:
         f.write(vc.serialize())
 
 if __name__ == '__main__':
     home_folder = 'C:\\Users\\jirib\\Downloads\\SD_samci\\Dohromady_zmenene\\'
-    file_name = home_folder + 'Anicka Mirosová.vcf'
+    file_name = f'{home_folder}Anicka Mirosová.vcf'
     print(f"... Testing Contact Class with source {file_name}")
     try:
         a = open_vcf(file_name)
-    except:
+    except Exception:
         a = vcf_object('John', 'Smith', '576852321')
     try:
         print(a.n)
-    except:
+    except Exception:
         a.add('n').value = name_value('John', 'Smith')
     try:
         print(a.fn)
-    except:
+    except Exception:
         a.add('fn').value = 'John Smith'
     try:
         print(a.tel)
-    except:
+    except Exception:
         a.add('tel').value = '576852321'
     print(quoted_printable(a))
     
