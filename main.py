@@ -162,19 +162,21 @@ class MainWindow:
             self.control()
 
     def control(self):
-        if (self.contacts_list.curselection()[0]+1) < len(self.contacts_lib.dic):
-            self.active['contact'] = self.contacts_lib.dic[int(self.active['index'])]['FN']
-            self.active['number'] = self.contacts_lib.dic[int(self.active['index'])]['TEL']
-            self.form['f1_inp'].delete(0, 'end')
-            self.form['f2_inp'].delete(0, 'end')
-            self.form['f1_inp'].insert(20, self.active['contact'])
-            self.form['f2_inp'].insert(20, self.active['number'])
-            print('Setting', str(self.contacts_list.curselection()[0]+1), '>', str(self.active['index']), 'record')
-            self.contacts_list.selection_clear(0, "end")
-            self.contacts_list.selection_set(int(self.active['index'])-1)
-            self.contacts_list.see(int(self.active['index'])-1)
-            self.contacts_list.activate(int(self.active['index'])-1)
-            self.contacts_list.selection_anchor(int(self.active['index'])-1)
+        if self.contacts_list.curselection()[0] + 1 >= len(self.contacts_lib.dic):
+            return
+        self.active['contact'] = self.contacts_lib.dic[int(self.active['index'])]['FN']
+        self.active['number'] = self.contacts_lib.dic[int(self.active['index'])]['TEL']
+        self.form['f1_inp'].delete(0, 'end')
+        self.form['f2_inp'].delete(0, 'end')
+        self.form['f1_inp'].insert(20, self.active['contact'])
+        self.form['f2_inp'].insert(20, self.active['number'])
+        print('Setting', self.contacts_list.curselection()[0] + 1, '>', self.active['index'], 'record')
+
+        self.contacts_list.selection_clear(0, "end")
+        self.contacts_list.selection_set(int(self.active['index'])-1)
+        self.contacts_list.see(int(self.active['index'])-1)
+        self.contacts_list.activate(int(self.active['index'])-1)
+        self.contacts_list.selection_anchor(int(self.active['index'])-1)
             # self.contacts_list.select_set(int(self.active['index'])-1)
             # self.contacts_list.event_generate("<<ListboxSelect>>")
 
@@ -204,13 +206,13 @@ class MainWindow:
             n = self.active['contact']['N'].given + ' ' + self.active['contact']['N'].family
         else:
             n = self.active['contact']['FN']
-        path = self.active['location']+'/'+n+'.vcf'
+        path = f'{self.active["location"]}/{n}.vcf'
         name = self.form['fgiven_inp'].get()
         family = self.form['ffamily_inp'].get()
         phone = self.form['ftelephone_inp'].get()
         v = Contact.vcf_object(name, family, phone, path)
         Contact.smash_it(path)
-        path = path.replace(n,name+' '+family)
+        path = path.replace(n,f'{name} {family}')
         # with open(path, 'w', encoding="utf-8") as original:  # bud prepis nebo novy
         with open(path, 'wb') as original: 
             original.write(Contact.quoted_printable(v))
