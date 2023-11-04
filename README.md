@@ -4,6 +4,16 @@ Python GUI for VCF parsing and editing
 
 Designed for fast use.  Security not implemented.
 
+Prepare environment:
+
+```shell
+python -m venv venv
+source ./venv/bin/activate
+pip install -r requirements.txt
+```
+
+
+
 Depend on these python3 modules:
 
 - [os (built-in)](https://docs.python.org/3/library/os.html)

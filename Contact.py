@@ -1,6 +1,8 @@
 from difflib import SequenceMatcher
 import os
+from pathlib import Path
 import quopri
+from unidecode import unidecode
 try:
     import vobject
     can_vcf = True
@@ -164,27 +166,16 @@ def append_to_vcf(location, vc):
         f.write(vc.serialize())
 
 if __name__ == '__main__':
-    home_folder = 'C:\\Users\\jirib\\Downloads\\SD_samci\\Dohromady_zmenene\\'
-    file_name = f'{home_folder}Anicka Mirosová.vcf'
-    print(f"... Testing Contact Class with source {file_name}")
-    try:
-        a = open_vcf(file_name)
-    except Exception:
-        a = vcf_object('John', 'Smith', '576852321')
-    try:
-        print(a.n)
-    except Exception:
-        a.add('n').value = name_value('John', 'Smith')
-    try:
-        print(a.fn)
-    except Exception:
-        a.add('fn').value = 'John Smith'
-    try:
-        print(a.tel)
-    except Exception:
-        a.add('tel').value = '576852321'
-    print(quoted_printable(a))
-    
+    source = Path('contacts') / 'export'
+    target = Path('contacts') / 'processed'
+    for filename in source.rglob('*.vcf'):
+        print(filename)
+        vcf = open_vcf(filename)
+        print(quoted_printable(vcf))
+        target_file = target / unidecode(filename.name)
+        with open(target_file, 'wb') as output_file:
+            output_file.write(quoted_printable(vcf))
+
 
     # debug_object = ContactList(file_name)
     #debug_object = ContactList(home_folder+'Dohromady', is_dir=True)
