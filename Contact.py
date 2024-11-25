@@ -24,7 +24,7 @@ class ContactList:
                             self.append(vobject.readOne(vcf_file))
                 else:  # this way counting number of records in a file
                     with open(vcf, mode='r', encoding='utf-8') as vcf_file:
-                        for v in vobject.readComponents(vcf_file):
+                        for v in vobject.readComponents(vcf_file, allowQP=True):
                             self.counter += 1
                             self.append(v)
         except Exception as e:
@@ -93,7 +93,7 @@ class ContactList:
 
 def open_vcf(location, debug=True):
     with open(location, mode='r', encoding='utf-8') as vcf_file:
-        for v in vobject.readComponents(vcf_file):
+        for v in vobject.readComponents(vcf_file, allowQP=True):
             if debug:
                 print(v.serialize())
                 print('*'*20)
