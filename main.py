@@ -1,17 +1,20 @@
 # -*- coding: utf-8 -*-
 
-# Must do for compatibility win <> lnx
+# Must have for compatibility win <> lnx
 try:
     import Tkinter as tk
     import Tkinter.filedialog as dialog
+
     print('using big tkinter (linux way)')
 except ImportError:
     import tkinter as tk
     import tkinter.filedialog as dialog
+
     print('using small tkinter (windows way)')
 
 # Contact list constructor
 import Contact
+
 
 # Main logic and layout
 class MainWindow:
@@ -24,43 +27,46 @@ class MainWindow:
             'location': '',
             'mode': tk.IntVar(value=0)  # folder value active
         }
-        self.btn = {}
-        self.form = {}
-        self.contacts_lib = ''
-        
-        # ===================== (Main Menu + controls)
-        self.current_location = tk.Label(self.master, text=f'Location: {self.active['location']}')
-        self.radio_directory = tk.Radiobutton(self.master, text='Directory', value=False, variable=self.active['mode'], command=self.set_dir)
-        self.radio_file = tk.Radiobutton(self.master, text='File', value=True, variable=self.active['mode'], command=self.set_file)
-        
-        self.current_location.grid(row=0, column=0, columnspan=3, sticky='w')
-        self.radio_directory.grid(row=0, column=4)
-        self.radio_file.grid(row=0, column=5)
-        
-        # ===================== (Button Menu)
-        self.btn['open'] = tk.Button(self.master, text='open', command=self.browse_dir)
-        self.btn['expt'] = tk.Button(self.master, text='export', command=self.export)
-        self.btn['prev'] = tk.Button(self.master, text='<', command=self.prev)
-        self.btn['save'] = tk.Button(self.master, text='save', command=self.save) 
-        self.btn['next'] = tk.Button(self.master, text='>', command=self.next)
-        self.btn['exit'] = tk.Button(self.master, text='quit', command=self.quit)
-        self.btn['open'].grid(row=1, column=0, pady=5, sticky='nsew')
-        self.btn['expt'].grid(row=1, column=1, pady=5, sticky='nsew')
-        self.btn['prev'].grid(row=1, column=2, pady=5, sticky='nsew')
-        self.btn['save'].grid(row=1, column=3, pady=5, sticky='nsew')
-        self.btn['next'].grid(row=1, column=4, pady=5, sticky='nsew')
-        self.btn['exit'].grid(row=1, column=5, pady=5, sticky='nsew')
+        self.tk_btn = {}
+        self.tk_form = {}
+        self.contacts_lib = ''  # here is the whole vcf library held
+
+        # ===================== (Main Menu + controls - 3 separate tk variables)
+        self.tk_current_location = tk.Label(self.master, text=f'Location: {self.active['location']}')
+        self.tk_radio_directory = tk.Radiobutton(self.master, text='Directory', value=False,
+                                                 variable=self.active['mode'],
+                                                 command=self.set_dir)
+        self.tk_radio_file = tk.Radiobutton(self.master, text='File', value=True, variable=self.active['mode'],
+                                            command=self.set_file)
+
+        self.tk_current_location.grid(row=0, column=0, columnspan=3, sticky='w')
+        self.tk_radio_directory.grid(row=0, column=4)
+        self.tk_radio_file.grid(row=0, column=5)
+
+        # ===================== (Button Menu - all 6 buttons in one dict variable)
+        self.tk_btn['open'] = tk.Button(self.master, text='open', command=self.browse_dir)
+        self.tk_btn['expt'] = tk.Button(self.master, text='export', command=self.export)
+        self.tk_btn['prev'] = tk.Button(self.master, text='<', command=self.prev)
+        self.tk_btn['save'] = tk.Button(self.master, text='save', command=self.save)
+        self.tk_btn['next'] = tk.Button(self.master, text='>', command=self.next)
+        self.tk_btn['exit'] = tk.Button(self.master, text='quit', command=self.quit)
+        self.tk_btn['open'].grid(row=1, column=0, pady=5, sticky='nsew')
+        self.tk_btn['expt'].grid(row=1, column=1, pady=5, sticky='nsew')
+        self.tk_btn['prev'].grid(row=1, column=2, pady=5, sticky='nsew')
+        self.tk_btn['save'].grid(row=1, column=3, pady=5, sticky='nsew')
+        self.tk_btn['next'].grid(row=1, column=4, pady=5, sticky='nsew')
+        self.tk_btn['exit'].grid(row=1, column=5, pady=5, sticky='nsew')
 
         # ===================== (Contacts list)
-        self.contacts_list = tk.Listbox(self.master, height=7)  # selectmode='SINGLE'
-        self.contacts_list.bind('<<ListboxSelect>>', self.on_select)
-        self.contacts_scroll = tk.Scrollbar(self.master, orient='vertical')
-        
-        self.contacts_list['yscrollcommand'] = self.contacts_scroll.set
-        self.contacts_scroll['command'] = self.contacts_list.yview
-        
-        self.contacts_list.grid(row=2, column=0, rowspan=5, columnspan=2, sticky='nsew')
-        self.contacts_scroll.grid(row=2, column=0, rowspan=5, columnspan=2, sticky='nse')
+        self.tk_contacts_list = tk.Listbox(self.master, height=7)  # selectmode='SINGLE'
+        self.tk_contacts_list.bind('<<ListboxSelect>>', self.on_select)
+        self.tk_contacts_scroll = tk.Scrollbar(self.master, orient='vertical')
+
+        self.tk_contacts_list['yscrollcommand'] = self.tk_contacts_scroll.set
+        self.tk_contacts_scroll['command'] = self.tk_contacts_list.yview
+
+        self.tk_contacts_list.grid(row=2, column=0, rowspan=5, columnspan=2, sticky='nsew')
+        self.tk_contacts_scroll.grid(row=2, column=0, rowspan=5, columnspan=2, sticky='nse')
 
         # TODO: 1. Switcher between folder and file mode not working
         # TODO: 2. Exporting / Merging
@@ -96,24 +102,24 @@ class MainWindow:
     def build_fields(self, contact):
         # the structure hardcoded for now, dynamic too cluttered
         if isinstance(contact['N'], str):
-            x = {'given': '','family':contact['N'],'telephone': contact['TEL']}
+            x = {'given': '', 'family': contact['N'], 'telephone': contact['TEL']}
         else:
             x = {
-                'given': contact['N'].given,'family':contact['N'].family,
+                'given': contact['N'].given, 'family': contact['N'].family,
                 'telephone': contact['TEL']
-                }
+            }
         for i, key in enumerate(x, start=1):
-            if self.form.get(f'f{key}_inp'):
-                self.form[f'f{key}_inp'].delete(0, 'end')
-                self.form[f'f{key}_inp'].destroy()
-            if self.form.get(f'f{key}_lab'):
-                self.form[f'f{key}_lab'].destroy()
+            if self.tk_form.get(f'f{key}_inp'):
+                self.tk_form[f'f{key}_inp'].delete(0, 'end')
+                self.tk_form[f'f{key}_inp'].destroy()
+            if self.tk_form.get(f'f{key}_lab'):
+                self.tk_form[f'f{key}_lab'].destroy()
             try:
-                self.form[f'f{key}_lab'] = tk.Label(self.master, text=key)
-                self.form[f'f{key}_inp'] = tk.Entry(self.master)
-                self.form[f'f{key}_lab'].grid(row=1+i, column=3, columnspan=1)
-                self.form[f'f{key}_inp'].grid(row=1+i, column=4, columnspan=2)
-                self.form[f'f{key}_inp'].insert(20, x[key])
+                self.tk_form[f'f{key}_lab'] = tk.Label(self.master, text=key)
+                self.tk_form[f'f{key}_inp'] = tk.Entry(self.master)
+                self.tk_form[f'f{key}_lab'].grid(row=1 + i, column=3, columnspan=1)
+                self.tk_form[f'f{key}_inp'].grid(row=1 + i, column=4, columnspan=2)
+                self.tk_form[f'f{key}_inp'].insert(20, x[key])
             except IndexError:
                 print('skipping this one', contact.keys())
 
@@ -122,26 +128,27 @@ class MainWindow:
             a = self.contacts_lib.dic
             if self.active['loading']:
                 # clear and fill again contact list
-                self.contacts_list.delete(0, 'end')
+                self.tk_contacts_list.delete(0, 'end')
                 for record in a.keys():
                     if isinstance(a[record]['FN'], str):
-                        self.contacts_list.insert('end', str(record) + '. ' + a[record]['FN'])
+                        self.tk_contacts_list.insert('end', str(record) + '. ' + a[record]['FN'])
                     else:
-                        self.contacts_list.insert(
+                        self.tk_contacts_list.insert(
                             'end',
                             f'{record}. {a[record]["FN"].given} {a[record]["FN"].family}',
                         )
 
                 self.active['loading'] = False
-            self.current_location['text'] = f'Location: {self.active['location']}'
+            self.tk_current_location['text'] = f'Location: {self.active['location']}'
         except AttributeError:
             print('... no contacts library loaded')
 
     def on_select(self, evt):
         w = evt.widget
-        if w == self.contacts_list and w.curselection():  # click in contact list
+        if w == self.tk_contacts_list and w.curselection():  # click in contact list
             index = int(w.curselection()[0])
             value = int(w.get(index).split('.')[0])
+            self.active['index'] = value
             self.active['contact'] = self.contacts_lib.dic[value]
             self.build_fields(self.contacts_lib.dic[value])
         self.refresh()
@@ -153,32 +160,26 @@ class MainWindow:
         if self.contacts_lib:
             if self.active['index'] > 1:
                 self.active['index'] -= 1
-            self.control()
+                self.control()
 
     def next(self):
         if self.contacts_lib:
             if self.active['index'] < len(self.contacts_lib.dic):
                 self.active['index'] += 1
-            self.control()
+                self.control()
 
     def control(self):
-        if self.contacts_list.curselection()[0] + 1 >= len(self.contacts_lib.dic):
-            return
-        self.active['contact'] = self.contacts_lib.dic[int(self.active['index'])]['FN']
-        self.active['number'] = self.contacts_lib.dic[int(self.active['index'])]['TEL']
-        self.form['f1_inp'].delete(0, 'end')
-        self.form['f2_inp'].delete(0, 'end')
-        self.form['f1_inp'].insert(20, self.active['contact'])
-        self.form['f2_inp'].insert(20, self.active['number'])
-        print('Setting', self.contacts_list.curselection()[0] + 1, '>', self.active['index'], 'record')
+        # setting active contact based on previously activated record
+        self.active['contact'] = self.contacts_lib.dic[self.active['index']]
+        self.build_fields(self.contacts_lib.dic[self.active['index']])
 
-        self.contacts_list.selection_clear(0, "end")
-        self.contacts_list.selection_set(int(self.active['index'])-1)
-        self.contacts_list.see(int(self.active['index'])-1)
-        self.contacts_list.activate(int(self.active['index'])-1)
-        self.contacts_list.selection_anchor(int(self.active['index'])-1)
-            # self.contacts_list.select_set(int(self.active['index'])-1)
-            # self.contacts_list.event_generate("<<ListboxSelect>>")
+        self.tk_contacts_list.selection_clear(0, "end")
+        self.tk_contacts_list.selection_set(int(self.active['index']) - 1)
+        self.tk_contacts_list.see(int(self.active['index']) - 1)
+        self.tk_contacts_list.activate(int(self.active['index']) - 1)
+        self.tk_contacts_list.selection_anchor(int(self.active['index']) - 1)
+        # self.tk_contacts_list.select_set(int(self.active['index'])-1)
+        # self.tk_contacts_list.event_generate("<<ListboxSelect>>")
 
     def export(self):
         if self.contacts_lib:
@@ -207,14 +208,14 @@ class MainWindow:
         else:
             n = self.active['contact']['FN']
         path = f'{self.active["location"]}/{n}.vcf'
-        name = self.form['fgiven_inp'].get()
-        family = self.form['ffamily_inp'].get()
-        phone = self.form['ftelephone_inp'].get()
+        name = self.tk_form['fgiven_inp'].get()
+        family = self.tk_form['ffamily_inp'].get()
+        phone = self.tk_form['ftelephone_inp'].get()
         v = Contact.vcf_object(name, family, phone, path)
         Contact.smash_it(path)
-        path = path.replace(n,f'{name} {family}')
+        path = path.replace(n, f'{name} {family}')
         # with open(path, 'w', encoding="utf-8") as original:  # bud prepis nebo novy
-        with open(path, 'wb') as original: 
+        with open(path, 'wb') as original:
             original.write(Contact.quoted_printable(v))
         self.contacts_lib = Contact.ContactList(self.active['location'], is_dir=True)
         self.refresh()
@@ -222,7 +223,7 @@ class MainWindow:
     def quit(self):
         self.master.destroy()
 
-    
+
 def contacts_editor():
     root = tk.Tk()
 

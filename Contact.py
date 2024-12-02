@@ -3,12 +3,16 @@ import os
 from pathlib import Path
 import quopri
 from unidecode import unidecode
+
 try:
     import vobject
+
     can_vcf = True
 except ImportError:
     print('... cannot work with vcf contacts')
     can_vcf = False
+
+
 class ContactList:
     def __init__(self, vcf, is_dir=False):
         self.counter = 0
@@ -75,13 +79,13 @@ class ContactList:
             actual.name = 'VCARD'
             actual.useBegin = True
             # actual.prettyPrint()
-            print_path = os.path.join(path, self.dic[record]['FN']+'.vcf')
+            print_path = os.path.join(path, self.dic[record]['FN'] + '.vcf')
             if os.path.exists(print_path):
                 print(f' overwrite {print_path}')
             with open(print_path, mode='w', encoding='utf-8') as f:
                 f.write(actual.serialize())
             i += 1
-        print('.'*3, f'processed {i} files')
+        print('.' * 3, f'processed {i} files')
 
     def merge(self, path):
         if os.path.isdir(path.name):
@@ -93,13 +97,15 @@ class ContactList:
             #for record in self.dic.keys():
             #    f.write(self.dic[record].serialize())
 
+
 def open_vcf(location, debug=True):
     with open(location, mode='r', encoding='utf-8') as vcf_file:
         for v in vobject.readComponents(vcf_file, allowQP=True):
             if debug:
                 print(v.serialize())
-                print('*'*20)
+                print('*' * 20)
             return v
+
 
 def vcf_object(first='', last='', tel='', loc=False):
     if loc:
@@ -109,10 +115,10 @@ def vcf_object(first='', last='', tel='', loc=False):
         m.n.value.given = first
         m.fn.value = f'{first} {last}'
         m.tel.value = tel
-    else:        
+    else:
         m = vobject.vCard()
         m.version = '2.1'
-        if first or last:    
+        if first or last:
             o = m.add('fn')
             o.value = f'{first} {last}'
             o = m.add('n')
@@ -123,6 +129,7 @@ def vcf_object(first='', last='', tel='', loc=False):
             o.value = tel
     return m
 
+
 def smash_it(path=''):
     try:
         if os.path.isfile(path):
@@ -132,20 +139,23 @@ def smash_it(path=''):
     except OSError as e:  # 
         print(f"!!! Chyba pri mazani {e.filename} - {e.strerror}.")
 
+
 def name_value(first='', last=''):
     if first and last:
         # return ';'.join((m.family, m.given, m.prefix, m.suffix, m.additional))
         return vobject.vcard.Name(family=last, given=first)
+
 
 def quoted_printable(vcf, serialize=True):
     if vcf and serialize:
         #first = quopri.encodestring(first.encode('utf-8'))
         #last = quopri.encodestring(last.encode('utf-8'))
         a = quopri.encodestring(vcf.serialize().encode('utf-8'))
-        a = a.replace(b'\nN:',b'\nN;ENCODING=QUOTED-PRINTABLE;CHARSET=UTF-8:')
-        a = a.replace(b'FN:',b'FN;ENCODING=QUOTED-PRINTABLE;CHARSET=UTF-8:')
+        a = a.replace(b'\nN:', b'\nN;ENCODING=QUOTED-PRINTABLE;CHARSET=UTF-8:')
+        a = a.replace(b'FN:', b'FN;ENCODING=QUOTED-PRINTABLE;CHARSET=UTF-8:')
         a = a.replace(b';CHARSET=3DUTF-8:', b';ENCODING=QUOTED-PRINTABLE;CHARSET=UTF-8:')
         return a
+
 
 def export_to_vcf(location, vc):
     """
@@ -153,9 +163,10 @@ def export_to_vcf(location, vc):
     :param location: where to write
     :param vc: single vobject instance
     """
-    vcf_name = f'{vc.fn.value}.vcf'   # .encode().decode('unicode-escape')
+    vcf_name = f'{vc.fn.value}.vcf'  # .encode().decode('unicode-escape')
     with open(location + vcf_name, mode='w', encoding='utf-8') as f:
         f.write(vc.serialize())
+
 
 def append_to_vcf(location, vc):
     """
@@ -163,9 +174,10 @@ def append_to_vcf(location, vc):
     :param location: where to write
     :param vc: single vobject instance
     """
-    vcf_name = f'{vc.fn.value}.vcf'   # .encode().decode('unicode-escape')
+    vcf_name = f'{vc.fn.value}.vcf'  # .encode().decode('unicode-escape')
     with open(location + vcf_name, mode='a', encoding='utf-8') as f:
         f.write(vc.serialize())
+
 
 if __name__ == '__main__':
     source = Path('contacts') / 'export'
@@ -177,7 +189,6 @@ if __name__ == '__main__':
         target_file = target / unidecode(filename.name)
         with open(target_file, 'wb') as output_file:
             output_file.write(quoted_printable(vcf))
-
 
     # debug_object = ContactList(file_name)
     #debug_object = ContactList(home_folder+'Dohromady', is_dir=True)
