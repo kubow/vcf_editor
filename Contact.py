@@ -19,9 +19,11 @@ class ContactList:
             if len(vcf) > 0 and can_vcf:
                 if is_dir:  # this way counting number of files
                     for file in os.listdir(vcf):
-                        with open(vcf+'\\'+file, mode='r', encoding='utf-8') as vcf_file:
-                            self.counter += 1
-                            self.append(vobject.readOne(vcf_file))
+                        file_to_check = Path(vcf, file)
+                        if os.path.isfile(file_to_check) and file.endswith('.vcf'):
+                            with open(file_to_check, mode='r', encoding='utf-8') as vcf_file:
+                                self.counter += 1
+                                self.append(vobject.readOne(vcf_file))
                 else:  # this way counting number of records in a file
                     with open(vcf, mode='r', encoding='utf-8') as vcf_file:
                         for v in vobject.readComponents(vcf_file, allowQP=True):
