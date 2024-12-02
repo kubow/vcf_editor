@@ -29,13 +29,13 @@ class MainWindow:
         self.contacts_lib = ''
         
         # ===================== (Main Menu + controls)
-        self.current_location = tk.Label(self.master, text='Location : {0}'.format(self.active['location']))
-        self.radio1 = tk.Radiobutton(self.master, text='Adresar', value=False, variable=self.active['mode'], command=self.set_dir)
-        self.radio2 = tk.Radiobutton(self.master, text='Soubor', value=True, variable=self.active['mode'], command=self.set_file)
+        self.current_location = tk.Label(self.master, text=f'Location: {self.active['location']}')
+        self.radio_directory = tk.Radiobutton(self.master, text='Directory', value=False, variable=self.active['mode'], command=self.set_dir)
+        self.radio_file = tk.Radiobutton(self.master, text='File', value=True, variable=self.active['mode'], command=self.set_file)
         
         self.current_location.grid(row=0, column=0, columnspan=3, sticky='w')
-        self.radio1.grid(row=0, column=4)
-        self.radio2.grid(row=0, column=5)
+        self.radio_directory.grid(row=0, column=4)
+        self.radio_file.grid(row=0, column=5)
         
         # ===================== (Button Menu)
         self.btn['open'] = tk.Button(self.master, text='open', command=self.browse_dir)
@@ -133,7 +133,7 @@ class MainWindow:
                         )
 
                 self.active['loading'] = False
-            self.current_location['text'] = 'Location : {0}'.format(self.active['location'])
+            self.current_location['text'] = f'Location: {self.active['location']}'
         except AttributeError:
             print('... no contacts library loaded')
 
@@ -226,7 +226,7 @@ class MainWindow:
 def contacts_editor():
     root = tk.Tk()
 
-    root.title('Editor VCF kontaktu')
+    root.title('VCF contact editor')
     root.resizable(7, 6)
     # root.geometry('1200x900')
     root.columnconfigure(0, weight=1)
