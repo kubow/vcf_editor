@@ -9,24 +9,22 @@ Prepare environment:
 ```shell
 python -m venv venv
 source ./venv/bin/activate
+venv/Script/activate #windows way
 pip install -r requirements.txt
 ```
 
+Then running a corresponding file will trigger an action:
 
-
-Depend on these python3 modules:
-
-- [os (built-in)](https://docs.python.org/3/library/os.html)
-- [difflib (built-in)](https://docs.python.org/3/library/difflib.html?highlight=difflib#module-difflib)
-- [TkInter](https://docs.python.org/3/library/tkinter.html?highlight=tkinter#module-tkinter)
-- [VObject](https://eventable.github.io/vobject/)
+```shell
+python Contact.py  # batch vcf processing
+python main.py  # tkinter interface
+```
 
 ## To do
 
-- Rebuild ContactList class (property dic will hold actual vobjects)
+- Extend Tk Form fields (picture, adresses, etc)
 - Loading contact cards with special character sets (tested only utf-8 + win1250)
 - Phones sanizitation
-- Extend with contact details (picture, adresses, etc)
 
 ## Resources (backup for now)
 ### TkInter
@@ -42,6 +40,7 @@ https://www.tutorialkart.com/python/tkinter/entry/
 - [VCF File Definition](https://docs.fileformat.com/email/vcf/)
 - [VCF Linux Tools](https://github.com/vcftools/vcftools)
 - [Error VCF Parsing](https://stackoverflow.com/questions/38410742/error-in-parsing-vcard-file-using-python-vobject-package)
+
 ### Encoding to hexa-chars
 - [Encoding/Decoding to Quoted printable](https://www.webatic.com/quoted-printable-convertor)
 - [ASCII to HEX](https://stackoverflow.com/questions/35536670/how-to-convert-ascii-to-hex-in-python)
