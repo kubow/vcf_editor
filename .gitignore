@@ -16,6 +16,9 @@ venv.bak/
 
 # vscode settings
 .vscode/*
+# IDEA settings 
+.idea/*
+
 
 # contacts folder
 contacts
