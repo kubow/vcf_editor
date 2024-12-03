@@ -1,19 +1,7 @@
 # -*- coding: utf-8 -*-
-
-# Must have for compatibility win <> lnx
-try:
-    import Tkinter as tk
-    import Tkinter.filedialog as dialog
-
-    print('using big tkinter (linux way)')
-except ImportError:
-    import tkinter as tk
-    import tkinter.filedialog as dialog
-
-    print('using small tkinter (windows way)')
-
-# Contact list constructor
-import Contact
+import tkinter as tk
+import tkinter.filedialog as dialog
+import Contact # Contact list constructor
 
 
 # Main logic and layout
