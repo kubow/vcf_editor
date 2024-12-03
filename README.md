@@ -20,11 +20,13 @@ python Contact.py  # batch vcf processing
 python main.py  # tkinter interface
 ```
 
+![user_interface](./screenshot.png)
+
 ## To do
 
-- Extend Tk Form fields (picture, adresses, etc)
 - Loading contact cards with special character sets (tested only utf-8 + win1250)
 - Phones sanizitation
+- Improve TkInter
 
 ## Resources (backup for now)
 ### TkInter
