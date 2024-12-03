@@ -1,56 +1,91 @@
 from difflib import SequenceMatcher
-import os
 from pathlib import Path
-import quopri
+from quopri import encodestring
 from unidecode import unidecode
 
 try:
     import vobject
-
-    can_vcf = True
 except ImportError:
-    print('... cannot work with vcf contacts')
-    can_vcf = False
+    raise Exception('... cannot work with vcf_location contacts, please install vobject')
+
+
+def parse_vcard(vcard: vobject):
+    """Extract detailed contact attributes from a VCard object."""
+    contact = {
+        'full_name': None,
+        'given_name': None,
+        'family_name': None,
+        'phone_numbers': [],
+        'emails': [],
+        'addresses': [],
+        'organization': None,
+        'job_title': None,
+        'birthday': None,
+        'notes': None,
+    }
+    # Extract full name
+    if hasattr(vcard, 'fn'):
+        contact['full_name'] = str(vcard.fn.value)
+    # Extract name components
+    if hasattr(vcard, 'n'):
+        contact['given_name'] = str(vcard.n.value.given)
+        contact['family_name'] = str(vcard.n.value.family)
+    # Extract phone numbers
+    for tel in vcard.contents.get('tel', []):
+        contact['phone_numbers'].append(str(tel.value))
+    # Extract emails
+    for email in vcard.contents.get('email', []):
+        contact['emails'].append(str(email.value))
+    # Extract addresses
+    for adr in vcard.contents.get('adr', []):
+        address = ', '.join(filter(None, [
+            adr.value.street,
+            adr.value.city,
+            adr.value.region,
+            adr.value.code,
+            adr.value.country
+        ]))
+        contact['addresses'].append(address)
+    # Extract organization
+    if hasattr(vcard, 'org'):
+        contact['organization'] = ' '.join(vcard.org.value)
+    # Extract job title
+    if hasattr(vcard, 'title'):
+        contact['job_title'] = str(vcard.title.value)
+    # Extract birthday
+    if hasattr(vcard, 'bday'):
+        contact['birthday'] = str(vcard.bday.value)
+    # Extract notes
+    if hasattr(vcard, 'note'):
+        contact['notes'] = str(vcard.note.value)
+
+    return contact
 
 
 class ContactList:
-    def __init__(self, vcf, is_dir=False):
-        self.counter = 0
-        self.dic = {}
-        self.ac_key = ''
+    """Creates a Contact list object either from a single file or a directory with vcf files"""
+    def __init__(self, vcf_location: str, is_dir=False) -> None:
+        self.counter = 0  # Start index for contacts
+        self.dic = {}  # Holds all the contact list indexed by counter
+        self.ac_key = ''  # For duplicates and searching
         self.ac_val = ''
         try:
-            if len(vcf) > 0 and can_vcf:
+            if len(vcf_location) > 0:
                 if is_dir:  # this way counting number of files
-                    for file in os.listdir(vcf):
-                        file_to_check = Path(vcf, file)
-                        if os.path.isfile(file_to_check) and file.endswith('.vcf'):
-                            with open(file_to_check, mode='r', encoding='utf-8') as vcf_file:
-                                self.counter += 1
-                                self.append(vobject.readOne(vcf_file))
+                    self.load_directory(vcf_location)
                 else:  # this way counting number of records in a file
-                    with open(vcf, mode='r', encoding='utf-8') as vcf_file:
-                        for v in vobject.readComponents(vcf_file, allowQP=True):
-                            self.counter += 1
-                            self.append(v)
+                    self.open_vcf(vcf_location)
+            else:
+                print("please follow with ContactList.open_vcf() or ContactList.load_directory()")
         except Exception as e:
             print('error:', e)
 
-    def append(self, vobj):
-        # print(str(self.counter)+'. '+str(vobj))
-        # vobj.n.value, str(vobj.tel.value).replace(' ', '')
-        passed = False
-        self.dic[self.counter] = {}
-        for field in vobj.getSortedChildren():
-            if field.name.lower() == 'fn':
-                passed = True
-            self.dic[self.counter][field.name] = field.value
-        if not passed:
-            self.dic[self.counter]['FN'] = self.dic[self.counter]['N']
-        # append_to_vcf(vcf + 'pokus.vcf', v)
-        # export_to_vcf(home_folder + 'work\\', vcard)
+    def _step(self, i: int = 1) -> None:
+        """Increment the current index by the specified step value."""
+        self.counter += i
 
     def find_duplicates(self):
+        """Finds duplicates across library."""
         # TODO: not valid, need to repair
         for key, value in self.dic.items():
             self.ac_key = key
@@ -59,18 +94,20 @@ class ContactList:
                 print(f'... consider as a duplicate {key} ({value})')
 
     def search(self, s):
+        """Search similar contacts."""
         # TODO: not valid, need to repair
         occurs = 0
         for item_no, details in self.dic.items():
             if item_no != self.ac_key:
-                name_ratio = SequenceMatcher(None, s['FN'], details['FN']).ratio()
+                name_ratio = SequenceMatcher(None, s['full_name'], details['full_name']).ratio()
                 tel_ratio = SequenceMatcher(None, s['TEL'], details['TEL']).ratio()
                 if name_ratio > 0.9 or tel_ratio > 0.9:
                     occurs += 1
-                    print(f'!!! found {details["FN"]} ({details["TEL"]}) that is suspect to {s["FN"]} ({s["TEL"]})')
+                    print(f'!!! found {details["full_name"]} ({details["TEL"]}) that is suspect to {s["full_name"]} ({s["TEL"]})')
         return occurs
 
     def export(self, path):
+        """Exporting contacts."""
         i = 0
         for record in self.dic.keys():
             actual = vobject.readOne(
@@ -79,8 +116,8 @@ class ContactList:
             actual.name = 'VCARD'
             actual.useBegin = True
             # actual.prettyPrint()
-            print_path = os.path.join(path, self.dic[record]['FN'] + '.vcf')
-            if os.path.exists(print_path):
+            print_path = Path(path / self.dic[record]['full_name'] + '.vcf')
+            if Path(print_path).exists():
                 print(f' overwrite {print_path}')
             with open(print_path, mode='w', encoding='utf-8') as f:
                 f.write(actual.serialize())
@@ -88,7 +125,7 @@ class ContactList:
         print('.' * 3, f'processed {i} files')
 
     def merge(self, path):
-        if os.path.isdir(path.name):
+        if Path(path.name).is_dir():
             with open(path + self.dic[self.ac_key]['FN'], mode='a', encoding='utf-8') as f:
                 f.write(self.dic.serialize())
         else:
@@ -97,47 +134,36 @@ class ContactList:
             #for record in self.dic.keys():
             #    f.write(self.dic[record].serialize())
 
+    def open_vcf(self, location: str):
+        """Load contacts from a single VCF file."""
+        try:
+            with open(location, mode='r', encoding='utf-8') as vcf_file:
+                vcard_data = vcf_file.read()
+            for vcard in vobject.readComponents(vcard_data, allowQP=True):
+                contact = parse_vcard(vcard)
+                self._step(1)  # Incrementing the index contact
+                self.dic[self.counter] = contact
+        except Exception as e:
+            print(f"Error loading file {location}: {e}")
 
-def open_vcf(location, debug=True):
-    with open(location, mode='r', encoding='utf-8') as vcf_file:
-        for v in vobject.readComponents(vcf_file, allowQP=True):
-            if debug:
-                print(v.serialize())
-                print('*' * 20)
-            return v
+    def load_directory(self, directory_path: str) -> None:
+        """Load all VCF files in a directory."""
+        for file in Path(directory_path).rglob("*.vcf"):
+            self.open_vcf(str(file))
 
-
-def vcf_object(first='', last='', tel='', loc=False):
-    if loc:
-        m = open_vcf(loc)
-        print(f'replacing values in {loc} ({first} {last} / {tel})')
-        m.n.value.family = last
-        m.n.value.given = first
-        m.fn.value = f'{first} {last}'
-        m.tel.value = tel
-    else:
-        m = vobject.vCard()
-        m.version = '2.1'
-        if first or last:
-            o = m.add('fn')
-            o.value = f'{first} {last}'
-            o = m.add('n')
-            o.value = vobject.vcard.Name(family=last, given=first)
-        if tel:
-            o = m.add('tel')
-            o.type_param = 'cell'
-            o.value = tel
-    return m
+    def __str__(self) -> str:
+        """String representation of the contact list."""
+        return f"ContactList with {len(self.dic)} contacts"
 
 
-def smash_it(path=''):
+def smash_it(path: str = ''):
     try:
-        if os.path.isfile(path):
-            os.remove(path)
+        if Path(path).is_file():
+            Path.unlink(path)
         else:
-            print(f'... soubor {path} neexistuje nebo neni vubec soubor')
+            print(f'... file {path} does not exist')
     except OSError as e:  # 
-        print(f"!!! Chyba pri mazani {e.filename} - {e.strerror}.")
+        print(f"!!! Error when deleting {e.filename} - {e.strerror}.")
 
 
 def name_value(first='', last=''):
@@ -146,11 +172,11 @@ def name_value(first='', last=''):
         return vobject.vcard.Name(family=last, given=first)
 
 
-def quoted_printable(vcf, serialize=True):
+def quoted_printable(vcf: vobject, serialize: bool=True):
     if vcf and serialize:
-        #first = quopri.encodestring(first.encode('utf-8'))
-        #last = quopri.encodestring(last.encode('utf-8'))
-        a = quopri.encodestring(vcf.serialize().encode('utf-8'))
+        #first = encodestring(first.encode('utf-8'))
+        #last = encodestring(last.encode('utf-8'))
+        a = encodestring(vcf.serialize().encode('utf-8'))
         a = a.replace(b'\nN:', b'\nN;ENCODING=QUOTED-PRINTABLE;CHARSET=UTF-8:')
         a = a.replace(b'FN:', b'FN;ENCODING=QUOTED-PRINTABLE;CHARSET=UTF-8:')
         a = a.replace(b';CHARSET=3DUTF-8:', b';ENCODING=QUOTED-PRINTABLE;CHARSET=UTF-8:')
@@ -159,37 +185,37 @@ def quoted_printable(vcf, serialize=True):
 
 def export_to_vcf(location, vc):
     """
-    exports vobject to a *.vcf file
+    exports vobject to a *.vcf_location file
     :param location: where to write
     :param vc: single vobject instance
     """
-    vcf_name = f'{vc.fn.value}.vcf'  # .encode().decode('unicode-escape')
+    vcf_name = f'{vc.fn.value}.vcf_location'  # .encode().decode('unicode-escape')
     with open(location + vcf_name, mode='w', encoding='utf-8') as f:
         f.write(vc.serialize())
 
 
 def append_to_vcf(location, vc):
     """
-    appends vobject to a *.vcf file
+    appends vobject to a *.vcf_location file
     :param location: where to write
     :param vc: single vobject instance
     """
-    vcf_name = f'{vc.fn.value}.vcf'  # .encode().decode('unicode-escape')
+    vcf_name = f'{vc.fn.value}.vcf_location'  # .encode().decode('unicode-escape')
     with open(location + vcf_name, mode='a', encoding='utf-8') as f:
         f.write(vc.serialize())
 
 
 if __name__ == '__main__':
-    source = Path('contacts') / 'export'
-    target = Path('contacts') / 'processed'
-    for filename in source.rglob('*.vcf'):
-        print(filename)
-        vcf = open_vcf(filename)
-        print(quoted_printable(vcf))
-        target_file = target / unidecode(filename.name)
-        with open(target_file, 'wb') as output_file:
-            output_file.write(quoted_printable(vcf))
+    source = Path('sample') / 'export'
+    target = Path('sample') / 'processed'
 
+    if source.is_dir():
+        debug_object = ContactList(str(source), is_dir=True)
+        print(quoted_printable(debug_object))
+        for index, value in debug_object.dic.items():
+            target_file = target / unidecode(value["full_name"] + ".vcf")
+            with open(target_file, 'wb') as output_file:
+                output_file.write(quoted_printable(value))
     # debug_object = ContactList(file_name)
     #debug_object = ContactList(home_folder+'Dohromady', is_dir=True)
     #debug_object.find_duplicates()

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import tkinter as tk
 import tkinter.filedialog as dialog
-import Contact # Contact list constructor
+from Contact import ContactList, parse_vcard, quoted_printable, smash_it
 
 
 # Main logic and layout
@@ -15,9 +15,9 @@ class MainWindow:
             'location': '',
             'mode': tk.IntVar(value=0)  # folder value active
         }
+        self.contacts_lib = ''  # here is the whole vcf library held
         self.tk_btn = {}
         self.tk_form = {}
-        self.contacts_lib = ''  # here is the whole vcf library held
 
         # ===================== (Main Menu + controls - 3 separate tk variables)
         self.tk_current_location = tk.Label(self.master, text=f'Location: {self.active['location']}')
@@ -82,32 +82,27 @@ class MainWindow:
             self.active['location'] = dialog.askdirectory()
             really = True
         if self.active['location']:
-            self.contacts_lib = Contact.ContactList(self.active['location'], is_dir=really)
+            self.contacts_lib = ContactList(self.active['location'], is_dir=really)
             self.active['loading'] = True
         else:
             self.active['location'] = backup  # reverting to previous value
 
     def build_fields(self, contact):
         # the structure hardcoded for now, dynamic too cluttered
-        if isinstance(contact['N'], str):
-            x = {'given': '', 'family': contact['N'], 'telephone': contact['TEL']}
-        else:
-            x = {
-                'given': contact['N'].given, 'family': contact['N'].family,
-                'telephone': contact['TEL']
-            }
-        for i, key in enumerate(x, start=1):
+        for i, key in enumerate(contact, start=1):
             if self.tk_form.get(f'f{key}_inp'):
                 self.tk_form[f'f{key}_inp'].delete(0, 'end')
                 self.tk_form[f'f{key}_inp'].destroy()
             if self.tk_form.get(f'f{key}_lab'):
                 self.tk_form[f'f{key}_lab'].destroy()
+            if not contact[key]:
+                continue  # skip render for empty fields
             try:
                 self.tk_form[f'f{key}_lab'] = tk.Label(self.master, text=key)
                 self.tk_form[f'f{key}_inp'] = tk.Entry(self.master)
                 self.tk_form[f'f{key}_lab'].grid(row=1 + i, column=3, columnspan=1)
                 self.tk_form[f'f{key}_inp'].grid(row=1 + i, column=4, columnspan=2)
-                self.tk_form[f'f{key}_inp'].insert(20, x[key])
+                self.tk_form[f'f{key}_inp'].insert(20, contact[key])
             except IndexError:
                 print('skipping this one', contact.keys())
 
@@ -118,14 +113,10 @@ class MainWindow:
                 # clear and fill again contact list
                 self.tk_contacts_list.delete(0, 'end')
                 for record in a.keys():
-                    if isinstance(a[record]['FN'], str):
-                        self.tk_contacts_list.insert('end', str(record) + '. ' + a[record]['FN'])
+                    if isinstance(a[record]['full_name'], str):
+                        self.tk_contacts_list.insert('end', f'{record}. {a[record]["full_name"]}')
                     else:
-                        self.tk_contacts_list.insert(
-                            'end',
-                            f'{record}. {a[record]["FN"].given} {a[record]["FN"].family}',
-                        )
-
+                        self.tk_contacts_list.insert('end', f'{record}. {a[record]["family_name"].family}')
                 self.active['loading'] = False
             self.tk_current_location['text'] = f'Location: {self.active['location']}'
         except AttributeError:
@@ -199,13 +190,13 @@ class MainWindow:
         name = self.tk_form['fgiven_inp'].get()
         family = self.tk_form['ffamily_inp'].get()
         phone = self.tk_form['ftelephone_inp'].get()
-        v = Contact.vcf_object(name, family, phone, path)
-        Contact.smash_it(path)
+        v = parse_vcard(name, family, phone, path)
+        smash_it(path)
         path = path.replace(n, f'{name} {family}')
         # with open(path, 'w', encoding="utf-8") as original:  # bud prepis nebo novy
         with open(path, 'wb') as original:
-            original.write(Contact.quoted_printable(v))
-        self.contacts_lib = Contact.ContactList(self.active['location'], is_dir=True)
+            original.write(quoted_printable(v))
+        self.contacts_lib = ContactList(self.active['location'], is_dir=True)
         self.refresh()
 
     def quit(self):
