@@ -1,8 +1,11 @@
 # vcf editor
 
-Python GUI for VCF parsing and editing
+Python GUI for VCF (contact files)
 
-Designed for fast use.  Security not implemented.
+- reading single VCF file / directory with VCF files
+- exporting contacts to a directory
+- altering data in VCF files
+
 
 Prepare environment:
 
@@ -16,7 +19,6 @@ pip install -r requirements.txt
 Then running a corresponding file will trigger an action:
 
 ```shell
-python Contact.py  # batch vcf processing
 python main.py  # tkinter interface
 ```
 
