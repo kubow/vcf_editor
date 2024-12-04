@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import tkinter as tk
 import tkinter.filedialog as dialog
-from Contact import ContactList, parse_vcard, quoted_printable, smash_it
+from Contact import ContactList, create_vcard, parse_vcard, quoted_printable, smash_it
 
 
 # Main logic and layout
@@ -15,7 +15,7 @@ class MainWindow:
             'location': '',
             'mode': tk.IntVar(value=0)  # folder value active
         }
-        self.contacts_lib = ''  # here is the whole vcf library held
+        self.contacts_lib = None  # here is the whole vcf library held
         self.tk_btn = {}
         self.tk_form = {}
 
@@ -88,21 +88,21 @@ class MainWindow:
             self.active['location'] = backup  # reverting to previous value
 
     def build_fields(self, contact):
-        # the structure hardcoded for now, dynamic too cluttered
+        """"""
         for i, key in enumerate(contact, start=1):
-            if self.tk_form.get(f'f{key}_inp'):
-                self.tk_form[f'f{key}_inp'].delete(0, 'end')
-                self.tk_form[f'f{key}_inp'].destroy()
-            if self.tk_form.get(f'f{key}_lab'):
-                self.tk_form[f'f{key}_lab'].destroy()
+            if self.tk_form.get(f'{key}'):
+                self.tk_form[f'{key}'].delete(0, 'end')
+                self.tk_form[f'{key}'].destroy()
+            if self.tk_form.get(f'{key}_lab'):
+                self.tk_form[f'{key}_lab'].destroy()
             if not contact[key]:
                 continue  # skip render for empty fields
             try:
-                self.tk_form[f'f{key}_lab'] = tk.Label(self.master, text=key)
-                self.tk_form[f'f{key}_inp'] = tk.Entry(self.master)
-                self.tk_form[f'f{key}_lab'].grid(row=1 + i, column=3, columnspan=1)
-                self.tk_form[f'f{key}_inp'].grid(row=1 + i, column=4, columnspan=2)
-                self.tk_form[f'f{key}_inp'].insert(20, contact[key])
+                self.tk_form[f'{key}_lab'] = tk.Label(self.master, text=key)
+                self.tk_form[f'{key}'] = tk.Entry(self.master)
+                self.tk_form[f'{key}_lab'].grid(row=1 + i, column=3, columnspan=1)
+                self.tk_form[f'{key}'].grid(row=1 + i, column=4, columnspan=2)
+                self.tk_form[f'{key}'].insert(20, contact[key])
             except IndexError:
                 print('skipping this one', contact.keys())
 
@@ -182,25 +182,29 @@ class MainWindow:
             self.build_contact()
 
     def build_contact(self):
-        if self.active['contact']['N'].family:
-            n = self.active['contact']['N'].given + ' ' + self.active['contact']['N'].family
-        else:
-            n = self.active['contact']['FN']
-        path = f'{self.active["location"]}/{n}.vcf'
-        name = self.tk_form['fgiven_inp'].get()
-        family = self.tk_form['ffamily_inp'].get()
-        phone = self.tk_form['ftelephone_inp'].get()
-        v = parse_vcard(name, family, phone, path)
+        path = f'{self.active["location"]}/{self.active["contact"]["full_name"]}.vcf'
+        v = create_vcard({key: get_widget_value(value) for key, value in self.tk_form.items() if "_lab" not in key})
         smash_it(path)
-        path = path.replace(n, f'{name} {family}')
-        # with open(path, 'w', encoding="utf-8") as original:  # bud prepis nebo novy
-        with open(path, 'wb') as original:
-            original.write(quoted_printable(v))
+        new_path = path.replace(self.active["contact"]["full_name"], v.contents.get("fn")[0].value)
+        # TODO: check if open(path, 'w', encoding="utf-8") needed
+        with open(new_path, 'wb') as changed:
+            changed.write(quoted_printable(v))
         self.contacts_lib = ContactList(self.active['location'], is_dir=True)
         self.refresh()
 
     def quit(self):
         self.master.destroy()
+
+
+def get_widget_value(widget):
+    try:
+        if hasattr(widget, "get"):
+            return widget.get()
+        elif hasattr(widget, "cget"):
+            return widget.cget("text")
+    except Exception as e:
+        return f"Error retrieving value: {e}"
+    return "Unsupported widget"
 
 
 def contacts_editor():

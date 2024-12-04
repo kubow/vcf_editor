@@ -9,8 +9,8 @@ except ImportError:
     raise Exception('... cannot work with vcf_location contacts, please install vobject')
 
 
-def parse_vcard(vcard: vobject):
-    """Extract detailed contact attributes from a VCard object."""
+def parse_vcard(vcard: vobject) -> dict:
+    """Extract detailed contact attributes from a VCard object into a dictionary."""
     contact = {
         'full_name': None,
         'given_name': None,
@@ -62,8 +62,62 @@ def parse_vcard(vcard: vobject):
     return contact
 
 
+def create_vcard(contact: dict) -> vobject:
+    """Convert a contact dictionary to a vCard object."""
+    vcard = vobject.vCard()
+
+    # Add full name
+    if contact.get('full_name'):
+        vcard.add('fn')
+        vcard.fn.value = contact['full_name']
+
+    # Add name components
+    if contact.get('given_name') or contact.get('family_name'):
+        vcard.add('n')
+        vcard.n.value = vobject.vcard.Name(
+            family=contact.get('family_name', ''),
+            given=contact.get('given_name', '')
+        )
+
+    # Add phone numbers with types
+    if isinstance(contact.get('phone_numbers', []), str):
+        tel = vcard.add('tel')
+        tel.value = contact.get('phone_numbers', [])
+        tel.type_param = 'CELL'
+    else:
+        for phone in contact.get('phone_numbers', []):
+            tel = vcard.add('tel')
+            tel.value = phone
+            tel.type_param = 'CELL'  # Example type
+
+    # Add emails with types
+    if isinstance(contact.get('emails', []), str):
+        email_field = vcard.add('email')
+        email_field.value = contact.get('emails', [])
+        email_field.type_param = 'HOME'  # Example type
+    else:
+        for email in contact.get('emails', []):
+            email_field = vcard.add('email')
+            email_field.value = email
+            email_field.type_param = 'HOME'  # Example type
+
+    # Add addresses
+    if isinstance(contact.get('addresses', []), str):
+        address_field = vcard.add('adr')
+        address_field.value = contact.get('addresses', [])
+        address_field.type_param = 'HOME'  # Example type
+    else:
+        for address in contact.get('addresses', []):
+            address_field = vcard.add('adr')
+            address_field.value = address
+            address_field.type_param = 'HOME'  # Example type
+
+    return vcard
+
+
 class ContactList:
     """Creates a Contact list object either from a single file or a directory with vcf files"""
+
     def __init__(self, vcf_location: str, is_dir=False) -> None:
         self.counter = 0  # Start index for contacts
         self.dic = {}  # Holds all the contact list indexed by counter
@@ -103,26 +157,24 @@ class ContactList:
                 tel_ratio = SequenceMatcher(None, s['TEL'], details['TEL']).ratio()
                 if name_ratio > 0.9 or tel_ratio > 0.9:
                     occurs += 1
-                    print(f'!!! found {details["full_name"]} ({details["TEL"]}) that is suspect to {s["full_name"]} ({s["TEL"]})')
+                    print(
+                        f'!!! found {details["full_name"]} ({details["TEL"]}) that is suspect to {s["full_name"]} ({s["TEL"]})')
         return occurs
 
     def export(self, path):
-        """Exporting contacts."""
-        i = 0
+        """Exporting contacts (currently multiple files in directory)."""
+        print('.' * 3, f'processing {len(self.dic)} files')
         for record in self.dic.keys():
-            actual = vobject.readOne(
-                '\n'.join(f'{k}:{v}' for k, v in self.dic[record].items())
-            )
+            actual = create_vcard(self.dic[record])
             actual.name = 'VCARD'
             actual.useBegin = True
             # actual.prettyPrint()
-            print_path = Path(path / self.dic[record]['full_name'] + '.vcf')
+            print_path = Path(path) / f"{self.dic[record]['full_name']}.vcf"
             if Path(print_path).exists():
                 print(f' overwrite {print_path}')
             with open(print_path, mode='w', encoding='utf-8') as f:
                 f.write(actual.serialize())
-            i += 1
-        print('.' * 3, f'processed {i} files')
+        print('.' * 3, f'done')
 
     def merge(self, path):
         if Path(path.name).is_dir():
@@ -172,10 +224,10 @@ def name_value(first='', last=''):
         return vobject.vcard.Name(family=last, given=first)
 
 
-def quoted_printable(vcf: vobject, serialize: bool=True):
+def quoted_printable(vcf: vobject, serialize: bool = True):
     if vcf and serialize:
-        #first = encodestring(first.encode('utf-8'))
-        #last = encodestring(last.encode('utf-8'))
+        # first = encodestring(first.encode('utf-8'))
+        # last = encodestring(last.encode('utf-8'))
         a = encodestring(vcf.serialize().encode('utf-8'))
         a = a.replace(b'\nN:', b'\nN;ENCODING=QUOTED-PRINTABLE;CHARSET=UTF-8:')
         a = a.replace(b'FN:', b'FN;ENCODING=QUOTED-PRINTABLE;CHARSET=UTF-8:')
@@ -216,6 +268,6 @@ if __name__ == '__main__':
             target_file = target / unidecode(value["full_name"] + ".vcf")
             with open(target_file, 'wb') as output_file:
                 output_file.write(quoted_printable(value))
-    # debug_object = ContactList(file_name)
-    #debug_object = ContactList(home_folder+'Dohromady', is_dir=True)
-    #debug_object.find_duplicates()
+    else:
+        debug_object = ContactList(str(source), is_dir=False)
+        debug_object.find_duplicates()
