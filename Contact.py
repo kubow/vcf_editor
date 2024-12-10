@@ -38,13 +38,14 @@ def parse_vcard(vcard: vobject) -> dict:
         contact['emails'].append(str(email.value))
     # Extract addresses
     for adr in vcard.contents.get('adr', []):
-        address = ', '.join(filter(None, [
-            adr.value.street,
-            adr.value.city,
-            adr.value.region,
-            adr.value.code,
-            adr.value.country
-        ]))
+        # Join each component's lines into a single line
+        street = ' '.join(adr.value.street)
+        city = ' '.join(adr.value.city)
+        region = ' '.join(adr.value.region)
+        code = ' '.join(adr.value.code)
+        country = ' '.join(adr.value.country)
+        # Join all components into a single address string
+        address = ', '.join(filter(None, [street, city, region, code, country]))
         contact['addresses'].append(address)
     # Extract organization
     if hasattr(vcard, 'org'):
