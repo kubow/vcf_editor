@@ -1,43 +1,43 @@
 # -*- coding: utf-8 -*-
-import tkinter as tk
-import tkinter.filedialog as dialog
+from tkinter import Button, Entry, IntVar, Label, Listbox, Radiobutton, Scrollbar, TclError, Tk
+from tkinter.filedialog import asksaveasfile, askopenfilename, askdirectory
 from Contact import ContactList, create_vcard, parse_vcard, quoted_printable, smash_it
 
 
-# Main logic and layout
 class MainWindow:
     def __init__(self, master):
+        """Maintain tkinter logic"""
         self.master = master
         self.active = {
             'contact': {},
             'index': 0,
             'loading': True,  # flag after load a file/dir
             'location': '',
-            'mode': tk.IntVar(value=0)  # folder value active
+            'mode': IntVar(value=0)  # folder value active
         }
         self.contacts_lib = None  # here is the whole vcf library held
         self.tk_btn = {}
         self.tk_form = {}
 
         # ===================== (Main Menu + controls - 3 separate tk variables)
-        self.tk_current_location = tk.Label(self.master, text=f'Location: {self.active['location']}')
-        self.tk_radio_directory = tk.Radiobutton(self.master, text='Directory', value=False,
-                                                 variable=self.active['mode'],
-                                                 command=self.set_dir)
-        self.tk_radio_file = tk.Radiobutton(self.master, text='File', value=True, variable=self.active['mode'],
-                                            command=self.set_file)
+        self.tk_current_location = Label(self.master, text=f'Location: {self.active['location']}')
+        self.tk_radio_directory = Radiobutton(self.master, text='Directory', value=False,
+                                              variable=self.active['mode'],
+                                              command=self.set_dir)
+        self.tk_radio_file = Radiobutton(self.master, text='File', value=True, variable=self.active['mode'],
+                                         command=self.set_file)
 
         self.tk_current_location.grid(row=0, column=0, columnspan=3, sticky='w')
         self.tk_radio_directory.grid(row=0, column=4)
         self.tk_radio_file.grid(row=0, column=5)
 
         # ===================== (Button Menu - all 6 buttons in one dict variable)
-        self.tk_btn['open'] = tk.Button(self.master, text='open', command=self.browse_dir)
-        self.tk_btn['expt'] = tk.Button(self.master, text='export', command=self.export)
-        self.tk_btn['prev'] = tk.Button(self.master, text='<', command=self.prev)
-        self.tk_btn['save'] = tk.Button(self.master, text='save', command=self.save)
-        self.tk_btn['next'] = tk.Button(self.master, text='>', command=self.next)
-        self.tk_btn['exit'] = tk.Button(self.master, text='quit', command=self.quit)
+        self.tk_btn['open'] = Button(self.master, text='open', command=self.browse_dir)
+        self.tk_btn['expt'] = Button(self.master, text='export', command=self.export)
+        self.tk_btn['prev'] = Button(self.master, text='<', command=self.prev)
+        self.tk_btn['save'] = Button(self.master, text='save', command=self.save)
+        self.tk_btn['next'] = Button(self.master, text='>', command=self.next)
+        self.tk_btn['exit'] = Button(self.master, text='quit', command=self.quit)
         self.tk_btn['open'].grid(row=1, column=0, pady=5, sticky='nsew')
         self.tk_btn['expt'].grid(row=1, column=1, pady=5, sticky='nsew')
         self.tk_btn['prev'].grid(row=1, column=2, pady=5, sticky='nsew')
@@ -46,9 +46,9 @@ class MainWindow:
         self.tk_btn['exit'].grid(row=1, column=5, pady=5, sticky='nsew')
 
         # ===================== (Contacts list)
-        self.tk_contacts_list = tk.Listbox(self.master, height=7)  # selectmode='SINGLE'
+        self.tk_contacts_list = Listbox(self.master, height=7)  # selectmode='SINGLE'
         self.tk_contacts_list.bind('<<ListboxSelect>>', self.on_select)
-        self.tk_contacts_scroll = tk.Scrollbar(self.master, orient='vertical')
+        self.tk_contacts_scroll = Scrollbar(self.master, orient='vertical')
 
         self.tk_contacts_list['yscrollcommand'] = self.tk_contacts_scroll.set
         self.tk_contacts_scroll['command'] = self.tk_contacts_list.yview
@@ -76,10 +76,10 @@ class MainWindow:
     def browse_dir(self):
         backup = self.active['location']
         if self.active['mode'].get():
-            self.active['location'] = dialog.askopenfilename()
+            self.active['location'] = askopenfilename()
             really = False
         else:
-            self.active['location'] = dialog.askdirectory()
+            self.active['location'] = askdirectory()
             really = True
         if self.active['location']:
             self.contacts_lib = ContactList(self.active['location'], is_dir=really)
@@ -88,23 +88,42 @@ class MainWindow:
             self.active['location'] = backup  # reverting to previous value
 
     def build_fields(self, contact):
-        """"""
+        """Main function for building a right side form with contact details"""
         for i, key in enumerate(contact, start=1):
+            self.destroy_form_field(key)
+            if not contact[key]:
+                continue  # skip render for empty fields
+            self.build_form_field(key)
+            self.tk_form[f'{key}_lab'].grid(row=1 + i, column=3, columnspan=1)
+            self.tk_form[f'{key}'].grid(row=1 + i, column=4, columnspan=2)
+            self.tk_form[f'{key}'].insert(20, contact[key])
+
+    def build_form_field(self, key):
+        try:
+            self.tk_form[f'{key}_lab'] = Label(self.master, text=key)
+            self.tk_form[f'{key}'] = Entry(self.master)
+        except TclError:
+            print('... skipping field', key, 'already deleted')
+
+    def destroy_form_field(self, key):
+        try:
+            if self.tk_form.get(f'{key}_lab'):
+                self.tk_form[f'{key}_lab'].destroy()
             if self.tk_form.get(f'{key}'):
                 self.tk_form[f'{key}'].delete(0, 'end')
                 self.tk_form[f'{key}'].destroy()
-            if self.tk_form.get(f'{key}_lab'):
-                self.tk_form[f'{key}_lab'].destroy()
-            if not contact[key]:
-                continue  # skip render for empty fields
-            try:
-                self.tk_form[f'{key}_lab'] = tk.Label(self.master, text=key)
-                self.tk_form[f'{key}'] = tk.Entry(self.master)
-                self.tk_form[f'{key}_lab'].grid(row=1 + i, column=3, columnspan=1)
-                self.tk_form[f'{key}'].grid(row=1 + i, column=4, columnspan=2)
-                self.tk_form[f'{key}'].insert(20, contact[key])
-            except IndexError:
-                print('skipping this one', contact.keys())
+        except TclError:
+            print('... skipping field', key, 'already deleted')
+
+    def on_select(self, evt):
+        w = evt.widget
+        if w == self.tk_contacts_list and w.curselection():  # click in contact list
+            index = int(w.curselection()[0])
+            value = int(w.get(index).split('.')[0])
+            self.active['index'] = value
+            self.active['contact'] = self.contacts_lib.dic[value]
+            self.build_fields(self.contacts_lib.dic[value])
+        self.refresh()
 
     def refresh(self):
         try:
@@ -116,21 +135,12 @@ class MainWindow:
                     if isinstance(a[record]['full_name'], str):
                         self.tk_contacts_list.insert('end', f'{record}. {a[record]["full_name"]}')
                     else:
-                        self.tk_contacts_list.insert('end', f'{record}. {a[record]["family_name"].family}')
+                        self.tk_contacts_list.insert('end', f'{record}. {a[record]["family_name"]}')
                 self.active['loading'] = False
             self.tk_current_location['text'] = f'Location: {self.active['location']}'
         except AttributeError:
             print('... no contacts library loaded')
-
-    def on_select(self, evt):
-        w = evt.widget
-        if w == self.tk_contacts_list and w.curselection():  # click in contact list
-            index = int(w.curselection()[0])
-            value = int(w.get(index).split('.')[0])
-            self.active['index'] = value
-            self.active['contact'] = self.contacts_lib.dic[value]
-            self.build_fields(self.contacts_lib.dic[value])
-        self.refresh()
+            # TODO: meaningful error handling
 
     def which_mode(self):
         return not self.active['mode'].get()
@@ -163,9 +173,9 @@ class MainWindow:
     def export(self):
         if self.contacts_lib:
             if self.active['mode'].get():  # file mode, export to directory
-                final_loc = dialog.askdirectory()
+                final_loc = askdirectory()
             else:
-                final_loc = dialog.asksaveasfile(mode='w', defaultextension=".txt")
+                final_loc = asksaveasfile(mode='w', defaultextension=".txt")
             # self.contacts_lib.find_duplicates()  # for sure report them, later  do different
             if self.active['location'] != final_loc and final_loc:
                 if self.active['mode'].get():
@@ -182,10 +192,25 @@ class MainWindow:
             self.build_contact()
 
     def build_contact(self):
-        path = f'{self.active["location"]}/{self.active["contact"]["full_name"]}.vcf'
-        v = create_vcard({key: get_widget_value(value) for key, value in self.tk_form.items() if "_lab" not in key})
+        """reconstruct contact from the form and re-save the file (name may differ)
+        note: FN field is not obligatory (in vCard 2.1) but python implementation requires that
+              thus it is enforced to enrich the tag from original name (N tag)
+        """
+        packed_form = {key: get_widget_value(value) for key, value in self.tk_form.items() if "_lab" not in key}
+        if "full_name" not in packed_form.keys():
+            packed_form["full_name"] = packed_form["given_name"] + " " + packed_form["family_name"]
+        v = create_vcard(packed_form)
+        
+        if self.active["contact"]["full_name"]:
+            path = f'{self.active["location"]}/{self.active["contact"]["full_name"]}.vcf'
+            new_path = path.replace(self.active["contact"]["full_name"], v.contents.get("fn")[0].value)
+        else:
+            path = f'{self.active["location"]}/{self.active["contact"]["given_name"]} {self.active["contact"]["family_name"]}.vcf'
+            new_path = path.replace(
+                self.active["contact"]["given_name"] + " " + self.active["contact"]["family_name"],
+                v.contents.get("n")[0].value.given + " " + v.contents.get("n")[0].value.family
+            )
         smash_it(path)
-        new_path = path.replace(self.active["contact"]["full_name"], v.contents.get("fn")[0].value)
         # TODO: check if open(path, 'w', encoding="utf-8") needed
         with open(new_path, 'wb') as changed:
             changed.write(quoted_printable(v))
@@ -208,7 +233,7 @@ def get_widget_value(widget):
 
 
 def contacts_editor():
-    root = tk.Tk()
+    root = Tk()
 
     root.title('VCF contact editor')
     root.resizable(7, 6)
