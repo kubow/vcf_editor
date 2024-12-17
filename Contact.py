@@ -39,11 +39,11 @@ def parse_vcard(vcard: vobject) -> dict:
     # Extract addresses
     for adr in vcard.contents.get('adr', []):
         # Join each component's lines into a single line
-        street = ' '.join(adr.value.street)
-        city = ' '.join(adr.value.city)
-        region = ' '.join(adr.value.region)
-        code = ' '.join(adr.value.code)
-        country = ' '.join(adr.value.country)
+        street = ''.join(adr.value.street)
+        city = ''.join(adr.value.city)
+        region = ''.join(adr.value.region)
+        code = ''.join(adr.value.code)
+        country = ''.join(adr.value.country)
         # Join all components into a single address string
         address = ', '.join(filter(None, [street, city, region, code, country]))
         contact['addresses'].append(address)
