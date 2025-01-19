@@ -1,0 +1,30 @@
+BEGIN:VCARD
+VERSION:3.0
+PRODID:-//Apple Inc.//Mac OS X 10.12.6//EN
+N:Алексеева Вагда Фаридовна;;;;
+FN:Алексеева Вагда Фаридовна
+EMAIL;type=INTERNET;type=WORK;type=pref:v.alekseeva@example.org
+UID:01cac8f2-f67e-45bb-984d-1c817f9ab940
+X-ABUID:01CAC8F2-F67E-45BB-984D-1C817F9AB940:ABPerson
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+PRODID:-//Apple Inc.//Mac OS X 10.12.6//EN
+N:;Иванов Николай Петрович;;;
+EMAIL;type=INTERNET;type=WORK;type=pref:n.ivanov@example.org
+BDAY:1986-07-12
+X-ABShowAs:COMPANY
+CATEGORIES:DEV
+UID:3012c7fc-0924-4531-a9c2-03ab051434e6
+X-ABUID:A3D21F31-1C5B-4D26-838C-91C19B8395A1:ABPerson
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+PRODID:-//Apple Inc.//Mac OS X 10.12.6//EN
+N:Ермакова Алия;;;;
+EMAIL;type=INTERNET;type=WORK;type=pref:a.ermakova@example.org
+BDAY:1990-01-28
+X-ABShowAs:COMPANY
+UID:fa2b64d4-bf6f-4712-96f3-2ba775745eb6
+X-ABUID:534E6569-2FF8-401E-A325-5FBCE8EBAA3D:ABPerson
+END:VCARD
