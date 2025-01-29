@@ -13,6 +13,7 @@ Prepare environment:
 python -m venv venv
 source ./venv/bin/activate
 venv/Script/activate #windows way
+sudo apt install python3-tk
 pip install -r requirements.txt
 ```
 
@@ -36,8 +37,8 @@ https://www.tutorialkart.com/python/tkinter/entry/
 
 ### VCF
 
-- [Vobject github source](https://github.com/eventable/vobject)
-- [Vobject documentation](http://eventable.github.io/vobject/)
+- [Vobject github source](https://github.com/py-vobject/vobject/)
+- [Vobject documentation](https://py-vobject.github.io/)
 - [Vobject usage old](http://vobject.skyhouseconsulting.com/usage.html)
 - [Vobject vcard definition](https://github.com/eventable/vobject/blob/master/vobject/vcard.py)
 - [VCF Fields Definition (N section)](https://datatracker.ietf.org/doc/html/rfc6350#section-6.2.2)
