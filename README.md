@@ -11,9 +11,8 @@ Prepare environment:
 
 ```shell
 python -m venv venv
-source ./venv/bin/activate
-venv/Script/activate #windows way
-sudo apt install python3-tk
+source ./venv/bin/activate  # linux/macos
+venv/Script/activate  # windows way
 pip install -r requirements.txt
 ```
 
@@ -29,11 +28,10 @@ python main.py  # tkinter interface
 
 - Loading contact cards with special character sets (tested only utf-8 + win1250)
 - Phones sanizitation
+- Form fields sanitization
 - Improve TkInter
 
-## Resources (backup for now)
-### TkInter
-https://www.tutorialkart.com/python/tkinter/entry/
+## Resources 
 
 ### VCF
 
