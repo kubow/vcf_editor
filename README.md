@@ -1,54 +1,120 @@
-# vcf editor
+# VCF Editor
 
-Python GUI for VCF (contact files)
+Python GUI for VCF (contact files) with **Tkinter** and **Streamlit** interfaces.
 
-- reading single VCF file / directory with VCF files
-- exporting contacts to a directory
-- altering data in VCF files
+## Features
 
+- Reading single VCF file or directory with VCF files
+- Exporting contacts to a directory
+- Editing and saving contact data
+- Two GUI options: classic Tkinter or modern Streamlit
+
+## Project Structure
+
+```
+vcf_editor/
+├── Contact.py        # Core contact management (shared library)
+├── main.py           # Launcher script
+├── gui_tkinter.py    # Tkinter GUI implementation
+├── gui_streamlit.py  # Streamlit GUI implementation
+├── requirements.in   # Direct dependencies (edit this)
+├── requirements.txt  # Locked dependencies (auto-generated)
+├── sample/           # Sample VCF files
+├── docs/             # Documentation
+│   ├── ARCHITECTURE.md  # Common logic & design
+│   └── RESOURCES.md     # External references
+└── README.md
+```
+
+## Setup
 
 Prepare environment:
 
 ```shell
 python -m venv venv
 source ./venv/bin/activate  # linux/macos
-venv/Script/activate  # windows way
+venv/Scripts/activate       # windows
 pip install -r requirements.txt
 ```
 
-Then running a corresponding file will trigger an action:
+## Dependency Management
+
+This project uses [pip-tools](https://pip-tools.readthedocs.io/) to manage dependencies.
+
+- `requirements.in` — direct dependencies (edit this file)
+- `requirements.txt` — locked dependencies with versions (auto-generated)
+
+### Adding or updating dependencies
 
 ```shell
-python main.py  # tkinter interface
+# Install pip-tools (if not already installed)
+pip install pip-tools
+
+# Edit requirements.in, then regenerate requirements.txt
+pip-compile requirements.in
+
+# Install/update packages
+pip install -r requirements.txt
 ```
 
-![user_interface](./screenshot.png)
+## Running the Application
 
-## To do
+### Option 1: Main Launcher
+
+```shell
+# Tkinter (default)
+python main.py
+
+# Tkinter explicitly
+python main.py --tk
+
+# Streamlit
+python main.py --st
+```
+
+### Option 2: Run Interfaces Directly
+
+```shell
+# Tkinter interface
+python gui_tkinter.py
+
+# Streamlit interface
+streamlit run gui_streamlit.py
+```
+
+## Screenshots
+
+### Tkinter Interface
+![tkinter_interface](./screenshot.png)
+
+### Streamlit Interface
+The Streamlit interface provides a modern web-based UI matching the Tkinter layout:
+- Same button row: open, export, <, save, >, quit
+- Contact list on the left
+- Edit form on the right
+- File upload or local path input
+
+## UI Behavior
+
+Both interfaces follow the same interaction pattern:
+
+1. **Mode Selection**: Choose between Directory or File mode
+2. **Open Dialog**: 
+   - Tkinter: Native OS file/folder picker opens automatically on mode switch
+   - Streamlit: File uploader expands automatically on mode switch
+3. **Navigation**: Use < > buttons or click contacts in the list
+4. **Edit & Save**: Modify fields and click save
+5. **Export**: Download as VCF or export to local folder
+
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for detailed logic description.
+
+## To Do
 
 - Loading contact cards with special character sets (tested only utf-8 + win1250)
-- Phones sanizitation
+- Phones sanitization
 - Form fields sanitization
-- Improve TkInter
+- Duplicate detection improvements
 
-## Resources 
+## Resources
 
-### VCF
-
-- [Vobject github source](https://github.com/py-vobject/vobject/)
-- [Vobject documentation](https://py-vobject.github.io/)
-- [Vobject usage old](http://vobject.skyhouseconsulting.com/usage.html)
-- [Vobject vcard definition](https://github.com/eventable/vobject/blob/master/vobject/vcard.py)
-- [VCF Fields Definition (N section)](https://datatracker.ietf.org/doc/html/rfc6350#section-6.2.2)
-- [VCF File Definition](https://docs.fileformat.com/email/vcf/)
-- [VCF Linux Tools](https://github.com/vcftools/vcftools)
-- [Error VCF Parsing](https://stackoverflow.com/questions/38410742/error-in-parsing-vcard-file-using-python-vobject-package)
-
-### Encoding to hexa-chars
-- [Encoding/Decoding to Quoted printable](https://www.webatic.com/quoted-printable-convertor)
-- [ASCII to HEX](https://stackoverflow.com/questions/35536670/how-to-convert-ascii-to-hex-in-python)
-- [convert string to bytes](https://stackoverflow.com/questions/7585435/best-way-to-convert-string-to-bytes-in-python-3#17500651)
-- [python encodings guide](https://realpython.com/python-encodings-guide/)
-- [built-in qoupri module](https://docs.python.org/3/library/quopri.html)
-- [special ASCII characters](http://www.addressmunger.com/special_ascii_characters/)
-- [UTF-8 charcter table](https://www.utf8-chartable.de/)
+See [docs/RESOURCES.md](docs/RESOURCES.md) for VCF references and encoding guides.
