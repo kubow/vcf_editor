@@ -20,6 +20,8 @@ vcf_editor/
 ├── requirements.in   # Direct dependencies (edit this)
 ├── requirements.txt  # Locked dependencies (auto-generated)
 ├── sample/           # Sample VCF files
+├── tests/            # Unit tests
+│   └── test_contact.py
 ├── docs/             # Documentation
 │   ├── ARCHITECTURE.md  # Common logic & design
 │   └── RESOURCES.md     # External references
@@ -55,6 +57,14 @@ pip-compile requirements.in
 
 # Install/update packages
 pip install -r requirements.txt
+```
+
+## Testing
+
+Run the test suite:
+
+```shell
+pytest tests/ -v
 ```
 
 ## Running the Application

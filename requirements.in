@@ -3,3 +3,6 @@ vobject
 Unidecode
 streamlit>=1.28.0
 
+# Development dependencies
+pytest
+
