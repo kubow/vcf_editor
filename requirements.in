@@ -1,0 +1,5 @@
+# Direct dependencies
+vobject
+Unidecode
+streamlit>=1.28.0
+
