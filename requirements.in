@@ -1,7 +1,9 @@
 # Direct dependencies
-vobject
-Unidecode
+protobuf>=6.33.4
 streamlit>=1.28.0
+Unidecode
+urllib3>=2.6.3
+vobject
 
 # Development dependencies
 pytest
